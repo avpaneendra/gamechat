@@ -49,11 +49,11 @@ class App extends Component {
 
 			const { target, from, payload } = parsed;
 
-			if(payload.type == "offer") {
+			if(payload.type === "offer") {
 				this.receievedOffer(payload)
 			}
 
-			if(payload.type == "answer") {
+			if(payload.type === "answer") {
 				this.receivedAnswer(payload)
 			}
 
