@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import queryString from 'query-string'
 import './App.css';
 
 class App extends Component {
@@ -9,16 +10,23 @@ class App extends Component {
 		this.state = {
 			receivedMessages: []
 		}
+
+		this.parsedQuery = queryString.parse(props.location.search)
+
 	}
 
 	receievedOffer = offer => {
 		console.log('got offer', offer)
 
-		this.remoteConnection.setRemoteDescription(new RTCSessionDescription(offer))
-		.then(() => this.remoteConnection.createAnswer())
+		this.localConnection.setRemoteDescription(new RTCSessionDescription(offer))
+		.then(() => this.localConnection.createAnswer())
 		.then(answer => {
-			this.remoteConnection.setLocalDescription(answer)
-			this.ws.send(JSON.stringify(answer))
+			this.localConnection.setLocalDescription(answer)
+			this.ws.send(JSON.stringify({
+				target: this.parsedQuery.target,
+				from: this.parsedQuery.id,
+				payload: answer
+			}))
 		})
 	}
 
@@ -31,23 +39,31 @@ class App extends Component {
 
 	connectWs = () => {
 
-		this.ws = new WebSocket("ws://localhost:8080")
+		this.ws = new WebSocket("ws://localhost:8080?id=" + this.parsedQuery.id)
 		this.ws.onopen = () => console.log('websocket open')
 		this.ws.onmessage = (msg) => {
 			const parsed = JSON.parse(msg.data)
 			console.log(parsed)
 
-			if(parsed.type == "offer") {
-				this.receievedOffer(parsed)
+			// assume they always accept a connection targeted at them for now.
+
+			const { target, from, payload } = parsed;
+
+			if(payload.type == "offer") {
+				this.receievedOffer(payload)
 			}
 
-			if(parsed.type == "answer") {
-				this.receivedAnswer(parsed)
+			if(payload.type == "answer") {
+				this.receivedAnswer(payload)
 			}
 
-			if(parsed.candidate) {
-				this.remoteConnection.addIceCandidate(new RTCIceCandidate(parsed.candidate))
-				this.localConnection.addIceCandidate(new RTCIceCandidate(parsed.candidate))
+			if(payload.candidate) {
+				console.log(payload.candidate)
+				//this.remoteConnection.addIceCandidate(new RTCIceCandidate(payload.candidate))
+				this.localConnection.addIceCandidate(new RTCIceCandidate(payload.candidate))
+			}
+			else {
+				console.log("null candidate")
 			}
 
 		}
@@ -60,45 +76,34 @@ class App extends Component {
 	}
 
 	componentDidMount() {
+		/*
+		this.remoteConnection = new RTCPeerConnection();
+		this.remoteConnection.ondatachannel = this.receiveChannelCallback;
+		*/
+
 		this.localConnection = new RTCPeerConnection();
+		this.localConnection.ondatachannel = this.receiveChannelCallback;
 
 		this.sendChannel = this.localConnection.createDataChannel("sendChannel");
 		this.sendChannel.onopen = () => { console.log('send channel open'); this.sendButton.disabled = false; }
 		this.sendChannel.onclose = () => { console.log('sendchannel close'); this.sendButton.disabled = true; }
 
-		this.connectWs();
-
-		this.remoteConnection = new RTCPeerConnection();
-		this.remoteConnection.ondatachannel = this.receiveChannelCallback;
 
 		this.localConnection.onicecandidate = e => {
-			console.log("ice candidate event: " + e)
-			this.ws.send(JSON.stringify({candidate: e.candidate}))
+			console.log("ice candidate event: " + e.candidate)
+			if(e.candidate) {
+				this.ws.send(JSON.stringify({
+					from: this.parsedQuery.id,
+					target: this.parsedQuery.target || "default",
+					payload: { candidate: e.candidate} 
+				}))
+			}
 		}
 		this.localConnection.onaddstream = e => {
-			console.log('add stream')
+			console.log('add stream', e)
 		}
 
-
-
-		this.localConnection.createOffer()
-			.then(offer => this.localConnection.setLocalDescription(offer))
-			.then(() => {
-				this.ws.send(JSON.stringify(this.localConnection.localDescription))
-			})
-			/*
-				this.remoteConnection.setRemoteDescription(this.localConnection.localDescription);
-			})
-			.then(() => this.remoteConnection.createAnswer())
-			.then(answer => {
-				this.remoteConnection.setLocalDescription(answer);
-
-				this.ws.send(JSON.stringify(answer))
-			})
-			.then(() => { this.localConnection.setRemoteDescription(this.remoteConnection.localDescription); console.log(this.remoteConnection); })
-			.catch(err => console.error('create description error', err))
-			*/
-
+		this.connectWs();
 	}
 
 	receiveChannelCallback = (event) => {
@@ -129,6 +134,32 @@ class App extends Component {
 	}
 
 	connect = () => {
+
+
+		this.localConnection.createOffer()
+			.then(offer => this.localConnection.setLocalDescription(offer))
+			.then(() => {
+				this.ws.send(JSON.stringify(
+					{
+						from: this.parsedQuery.id,
+						target: this.parsedQuery.target,
+						payload: this.localConnection.localDescription
+					}
+				))
+			})
+			.catch(err => console.log(err))
+			/*
+				this.remoteConnection.setRemoteDescription(this.localConnection.localDescription);
+			})
+			.then(() => this.remoteConnection.createAnswer())
+			.then(answer => {
+				this.remoteConnection.setLocalDescription(answer);
+
+				this.ws.send(JSON.stringify(answer))
+			})
+			.then(() => { this.localConnection.setRemoteDescription(this.remoteConnection.localDescription); console.log(this.remoteConnection); })
+			.catch(err => console.error('create description error', err))
+			*/
 
 	}
 
