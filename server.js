@@ -1,7 +1,28 @@
-const WebSocket = require('ws')
 const url = require('url')
+const https = require('https')
+const fs = require('fs')
 
-const wss = new WebSocket.Server({ port: 8080 })
+const WebSocket = require('ws')
+
+let opts;
+
+if(process.env.NODE_ENV === "production") {
+	opts = {
+		//key: fs.readFileSync('/etc/nginx/metal.fish.key'),
+		//cert: fs.readFileSync('/etc/nginx/metal.fish.crt')
+	}
+} 
+else {
+	opts = { 
+		key: fs.readFileSync('key.pem'),
+		cert: fs.readFileSync('cert.pem'),
+		passphrase: 'password'
+	}
+}
+
+const server = https.createServer(opts, (req, res) => { res.end('hi') }).listen(8443);
+
+const wss = new WebSocket.Server({ server })
 
 const people = new Map();
 

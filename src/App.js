@@ -40,8 +40,8 @@ class App extends Component {
 
 	connectWs = () => {
 
-		this.ws = new WebSocket("ws://metal.fish:8080?id=" + this.parsedQuery.id)
-		//this.ws = new WebSocket("ws://localhost:8080?id=" + this.parsedQuery.id)
+		//this.ws = new WebSocket("wss://metal.fish:8443?id=" + this.parsedQuery.id)
+		this.ws = new WebSocket("wss://localhost:8443?id=" + this.parsedQuery.id)
 		this.ws.onopen = () => console.log('websocket open')
 		this.ws.onmessage = (msg) => {
 			const parsed = JSON.parse(msg.data)
@@ -61,7 +61,6 @@ class App extends Component {
 
 			if(payload.candidate) {
 				console.log(payload.candidate)
-				//this.remoteConnection.addIceCandidate(new RTCIceCandidate(payload.candidate))
 				this.localConnection.addIceCandidate(new RTCIceCandidate(payload.candidate))
 			}
 			else {
@@ -78,10 +77,6 @@ class App extends Component {
 	}
 
 	componentDidMount() {
-		/*
-		this.remoteConnection = new RTCPeerConnection();
-		this.remoteConnection.ondatachannel = this.receiveChannelCallback;
-		*/
 
 		this.localConnection = new RTCPeerConnection();
 		this.localConnection.ondatachannel = this.receiveChannelCallback;
@@ -105,12 +100,6 @@ class App extends Component {
 		this.localConnection.onaddstream = e => {
 			console.log('add stream', e)
 			this.remote_vid.srcObject = e.stream;
-			//this.gotRemoteStream(e)
-		}
-
-		this.localConnection.ontrack = e => {
-			console.log('got remote track?', e)
-			this.gotRemoteStream(e)
 		}
 
 		this.connectWs();
@@ -168,10 +157,9 @@ class App extends Component {
 
 	connect = () => {
 
-		console.log('adding tracks')
+		console.log('adding stream')
 		this.localConnection.addStream(this.stream);
-		//this.stream.getTracks().forEach(track => this.localConnection.addTrack(track, this.stream));
-		console.log('added tracks')
+		console.log('added stream')
 
 		this.localConnection.createOffer()
 			.then(offer => this.localConnection.setLocalDescription(offer))
@@ -185,19 +173,6 @@ class App extends Component {
 				))
 			})
 			.catch(err => console.log(err))
-			/*
-				this.remoteConnection.setRemoteDescription(this.localConnection.localDescription);
-			})
-			.then(() => this.remoteConnection.createAnswer())
-			.then(answer => {
-				this.remoteConnection.setLocalDescription(answer);
-
-				this.ws.send(JSON.stringify(answer))
-			})
-			.then(() => { this.localConnection.setRemoteDescription(this.remoteConnection.localDescription); console.log(this.remoteConnection); })
-			.catch(err => console.error('create description error', err))
-			*/
-
 	}
 
 	disconnect = () => {
