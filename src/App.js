@@ -40,8 +40,8 @@ class App extends Component {
 
 	connectWs = () => {
 
-		//this.ws = new WebSocket("wss://metal.fish:8443?id=" + this.parsedQuery.id)
-		this.ws = new WebSocket("wss://localhost:8443?id=" + this.parsedQuery.id)
+		this.ws = new WebSocket("wss://metal.fish:8443?id=" + this.parsedQuery.id)
+		//this.ws = new WebSocket("wss://localhost:8443?id=" + this.parsedQuery.id)
 		this.ws.onopen = () => console.log('websocket open')
 		this.ws.onmessage = (msg) => {
 			const parsed = JSON.parse(msg.data)
