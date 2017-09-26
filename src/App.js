@@ -18,6 +18,7 @@ class App extends Component {
 	receievedOffer = offer => {
 		console.log('got offer', offer)
 
+		this.localConnection.addStream(this.stream)
 		this.localConnection.setRemoteDescription(new RTCSessionDescription(offer))
 		.then(() => this.localConnection.createAnswer())
 		.then(answer => {
@@ -39,7 +40,8 @@ class App extends Component {
 
 	connectWs = () => {
 
-		this.ws = new WebSocket("ws://metal.fish:8080?id=" + this.parsedQuery.id)
+		//this.ws = new WebSocket("ws://metal.fish:8080?id=" + this.parsedQuery.id)
+		this.ws = new WebSocket("ws://localhost:8080?id=" + this.parsedQuery.id)
 		this.ws.onopen = () => console.log('websocket open')
 		this.ws.onmessage = (msg) => {
 			const parsed = JSON.parse(msg.data)
@@ -83,6 +85,7 @@ class App extends Component {
 
 		this.localConnection = new RTCPeerConnection();
 		this.localConnection.ondatachannel = this.receiveChannelCallback;
+		console.log(this.localConnection)
 
 		this.sendChannel = this.localConnection.createDataChannel("sendChannel");
 		this.sendChannel.onopen = () => { console.log('send channel open'); this.sendButton.disabled = false; }
@@ -101,11 +104,41 @@ class App extends Component {
 		}
 		this.localConnection.onaddstream = e => {
 			console.log('add stream', e)
+			this.remote_vid.srcObject = e.stream;
+			//this.gotRemoteStream(e)
+		}
+
+		this.localConnection.ontrack = e => {
+			console.log('got remote track?', e)
+			this.gotRemoteStream(e)
 		}
 
 		this.connectWs();
+
+		navigator.mediaDevices.getUserMedia({
+			video: true,
+			audio: true
+		})
+		.then(stream => {
+			console.log(stream)
+			this.stream = stream;
+			this.local_vid.srcObject = stream;
+
+			this.stream.oninactive = () => console.log('inactive stream')
+		})
+		.catch(err => {
+			console.error(err)
+		})
 	}
 
+	gotRemoteStream = event => {
+		console.log('got remote stream')
+
+		if(this.remote_vid.srcObject !== event.streams[0]) {
+			this.remote_vid.srcObject = event.streams[0];
+			console.log('set remote stream')
+		}
+	}
 	receiveChannelCallback = (event) => {
 		console.log(event, this.receiveChannel)
 		this.receiveChannel = event.channel;
@@ -135,6 +168,10 @@ class App extends Component {
 
 	connect = () => {
 
+		console.log('adding tracks')
+		this.localConnection.addStream(this.stream);
+		//this.stream.getTracks().forEach(track => this.localConnection.addTrack(track, this.stream));
+		console.log('added tracks')
 
 		this.localConnection.createOffer()
 			.then(offer => this.localConnection.setLocalDescription(offer))
@@ -179,6 +216,8 @@ class App extends Component {
 				<button id="connecto" onClick={this.connect}>Connect</button>
 				<button id="disconnecto" onClick={this.disconnect}>Disconnect</button>
 
+				<video id="myvid" ref={x => this.local_vid = x} height="500" width="800" autoPlay controls/>
+				<video id="your_vid" ref={x => this.remote_vid = x} height="500" width="800" autoPlay controls/>
 				<div id="receivebox">
 					<p>Messages received:</p>
 					{
