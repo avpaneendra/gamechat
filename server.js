@@ -61,7 +61,9 @@ wss.on('connection', (ws, req) => {
 		console.log('closed', roomId, connId)
 		if(rooms.has(roomId)) {
 			rooms.get(roomId).delete(connId);
-			rooms.get(roomId).forEach(c => c.send(JSON.stringify({ close: true })))
+			// for some reason ws connection keeps closing all the time.
+			// investigate that later
+			//rooms.get(roomId).forEach(c => c.send(JSON.stringify({ close: true })))
 		}
 	})
 })
