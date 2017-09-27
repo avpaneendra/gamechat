@@ -24,25 +24,44 @@ const server = https.createServer(opts, (req, res) => { res.end('hi') }).listen(
 
 const wss = new WebSocket.Server({ server })
 
-const people = new Map();
+const rooms = new Map(); // key: roomid, value: list of WS
 
 wss.on('connection', (ws, req) => {
 
 	const location = url.parse(req.url, true)
 	console.log(location.query)
 
-	people.set(location.query.id, ws);
+	const connId = Math.random();
+	const roomId = location.query.id;
 
-	const id = Math.random();
+	if(rooms.has(roomId)) {
+		rooms.get(roomId).forEach(conn => {
+			conn.send(JSON.stringify({ init: true }))
+		})
+		rooms.get(roomId).set(connId, ws);
+	}
+	else {
+		const room = new Map();
+		room.set(connId, ws);
+		rooms.set(roomId, room);
+	}
+
 	ws.on('message', msg => {
 
-		const { target, payload, from } = JSON.parse(msg);
+		rooms.get(roomId)
+			.forEach(conn => {
+				if(conn !== ws) {
+					conn.send(msg);
+				}
+			})
 
-		console.log(target)
-		if(people.has(target)) {
-			people.get(target).send(msg);
+	})
+
+	ws.on('close', () => {
+		console.log('closed', roomId, connId)
+		if(rooms.has(roomId)) {
+			rooms.get(roomId).delete(connId);
+			rooms.get(roomId).forEach(c => c.send(JSON.stringify({ close: true })))
 		}
-
-		console.log('received: ', msg)
 	})
 })

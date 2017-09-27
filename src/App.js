@@ -13,13 +13,31 @@ class App extends Component {
 
 		this.parsedQuery = queryString.parse(props.location.search)
 
+		this.stream = navigator.mediaDevices.getUserMedia({
+			video: true,
+			audio: true
+		})
+		.then(stream => {
+			console.log('adding stream')
+			this.localConnection.addStream(stream);
+			console.log('added stream')
+			this.local_vid.srcObject = stream;
+
+			this.stream.oninactive = () => console.log('inactive stream')
+
+		})
+		.catch(err => {
+			console.error(err)
+		})
 	}
 
 	receievedOffer = offer => {
 		console.log('got offer', offer)
 
-		this.localConnection.addStream(this.stream)
-		this.localConnection.setRemoteDescription(new RTCSessionDescription(offer))
+		//this.localConnection.addStream(this.stream)
+
+		console.log('stream: ', this.stream)
+		this.stream.then(() => this.localConnection.setRemoteDescription(new RTCSessionDescription(offer)))
 		.then(() => this.localConnection.createAnswer())
 		.then(answer => {
 			this.localConnection.setLocalDescription(answer)
@@ -40,14 +58,22 @@ class App extends Component {
 
 	connectWs = () => {
 
-		this.ws = new WebSocket("wss://metal.fish:8443?id=" + this.parsedQuery.id)
-		//this.ws = new WebSocket("wss://localhost:8443?id=" + this.parsedQuery.id)
+		//this.ws = new WebSocket("wss://metal.fish:8443?id=" + this.parsedQuery.id)
+		this.ws = new WebSocket("wss://localhost:8443?id=" + this.parsedQuery.id)
 		this.ws.onopen = () => console.log('websocket open')
 		this.ws.onerror = err => console.error(err)
 		this.ws.onmessage = (msg) => {
 			const parsed = JSON.parse(msg.data)
 			console.log(parsed)
 
+			if(parsed.init) {
+				this.connect();
+				return;
+			}
+			if(parsed.close) {
+				this.remote_vid.srcObject = null;
+				return;
+			}
 			// assume they always accept a connection targeted at them for now.
 
 			const { payload } = parsed;
@@ -119,20 +145,6 @@ class App extends Component {
 
 		this.connectWs();
 
-		navigator.mediaDevices.getUserMedia({
-			video: true,
-			audio: true
-		})
-		.then(stream => {
-			console.log(stream)
-			this.stream = stream;
-			this.local_vid.srcObject = stream;
-
-			this.stream.oninactive = () => console.log('inactive stream')
-		})
-		.catch(err => {
-			console.error(err)
-		})
 	}
 
 	gotRemoteStream = event => {
@@ -172,11 +184,8 @@ class App extends Component {
 
 	connect = () => {
 
-		console.log('adding stream')
-		this.localConnection.addStream(this.stream);
-		console.log('added stream')
-
-		this.localConnection.createOffer()
+		this.stream
+			.then(() => this.localConnection.createOffer())
 			.then(offer => this.localConnection.setLocalDescription(offer))
 			.then(() => {
 				this.ws.send(JSON.stringify(
@@ -203,11 +212,9 @@ class App extends Component {
 					</label>
 					<button id="sendButton" ref={x => this.sendButton = x} onClick={ () => this.send()}>send</button>
 				</div>
-				<button id="connecto" onClick={this.connect}>Connect</button>
-				<button id="disconnecto" onClick={this.disconnect}>Disconnect</button>
 
-				<video id="myvid" ref={x => this.local_vid = x} height="500" width="800" autoPlay muted />
-				<video id="your_vid" ref={x => this.remote_vid = x} height="500" width="800" autoPlay controls/>
+				<video id="remote_vid" ref={x => this.remote_vid = x} autoPlay controls/>
+				<video id="local_vid" ref={x => this.local_vid = x} autoPlay muted />
 				<div id="receivebox">
 					<p>Messages received:</p>
 					{
