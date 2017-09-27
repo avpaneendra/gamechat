@@ -43,13 +43,14 @@ class App extends Component {
 		this.ws = new WebSocket("wss://metal.fish:8443?id=" + this.parsedQuery.id)
 		//this.ws = new WebSocket("wss://localhost:8443?id=" + this.parsedQuery.id)
 		this.ws.onopen = () => console.log('websocket open')
+		this.ws.onerror = err => console.error(err)
 		this.ws.onmessage = (msg) => {
 			const parsed = JSON.parse(msg.data)
 			console.log(parsed)
 
 			// assume they always accept a connection targeted at them for now.
 
-			const { target, from, payload } = parsed;
+			const { payload } = parsed;
 
 			if(payload.type === "offer") {
 				this.receievedOffer(payload)
@@ -62,6 +63,8 @@ class App extends Component {
 			if(payload.candidate) {
 				console.log(payload.candidate)
 				this.localConnection.addIceCandidate(new RTCIceCandidate(payload.candidate))
+					.then(x => console.log('ice candidate success'))
+					.catch(x => console.log('ice candidate failed'))
 			}
 			else {
 				console.log("null candidate")
@@ -78,7 +81,19 @@ class App extends Component {
 
 	componentDidMount() {
 
-		this.localConnection = new RTCPeerConnection();
+		this.localConnection = new RTCPeerConnection({
+			iceServers: [
+				{
+					urls: [
+						'stun:stun.l.google.com:19302',
+						'stun:stun1.l.google.com:19302',
+						'stun:stun2.l.google.com:19302',
+						'stun:stun3.l.google.com:19302',
+						'stun:stun4.l.google.com:19302'
+					]
+				}
+			]
+		});
 		this.localConnection.ondatachannel = this.receiveChannelCallback;
 		console.log(this.localConnection)
 
@@ -191,7 +206,7 @@ class App extends Component {
 				<button id="connecto" onClick={this.connect}>Connect</button>
 				<button id="disconnecto" onClick={this.disconnect}>Disconnect</button>
 
-				<video id="myvid" ref={x => this.local_vid = x} height="500" width="800" autoPlay controls/>
+				<video id="myvid" ref={x => this.local_vid = x} height="500" width="800" autoPlay muted />
 				<video id="your_vid" ref={x => this.remote_vid = x} height="500" width="800" autoPlay controls/>
 				<div id="receivebox">
 					<p>Messages received:</p>
