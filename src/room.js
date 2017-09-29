@@ -11,6 +11,7 @@ export default class Room {
 
 	constructor(roomId, getUserMedia) {
 
+		this.roomId = roomId;
 		this.peerConnections = new Map(); // key: string, value: RTCPeerConnection
 
 		// maybe this promise should be supplied by instantiator
@@ -74,7 +75,24 @@ export default class Room {
 			]
 		})
 
-		peerConn.ondatachannel = this.onPeerConnDataChannel;
+		peerConn.ondatachannel = e => {
+			e.channel.onmessage = msg => console.log('msg from', user, msg);
+		}
+
+		this.stream
+			.then(stream => peerConn.addStream(stream))
+			.then(() => peerConn.createOffer())
+			.then(offer => peerConn.setLocalDescription(offer))
+			.then(() => {
+				this.ws.send(JSON.stringify(
+					{
+						room: {
+							id: this.roomId
+						},
+						
+					}
+				))
+			})
 	}
 
 	onSignal(msg) {
