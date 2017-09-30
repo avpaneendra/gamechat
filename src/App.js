@@ -57,7 +57,7 @@ class App extends Component {
 					this.state.remoteStreams.map(s =>
 						<video id={s.user.id} key={s.user.id} ref={x => {
 							this[s.user.id + "_video"] = x;
-							}} autoPlay controls muted />
+							}} autoPlay controls />
 					)
 				}
 			</div>
