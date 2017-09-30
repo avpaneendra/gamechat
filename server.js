@@ -8,8 +8,8 @@ let opts;
 
 if(process.env.NODE_ENV === "production") {
 	opts = {
-		key: fs.readFileSync('/etc/nginx/metal.fish.key'),
-		cert: fs.readFileSync('/etc/nginx/metal.fish.crt')
+		key: fs.readFileSync('/etc/nginx/gamechat.key'),
+		cert: fs.readFileSync('/etc/nginx/gamechat.crt')
 	}
 } 
 else {
