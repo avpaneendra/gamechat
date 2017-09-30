@@ -31,6 +31,8 @@ export default class Fun extends Component {
 
 		const video = document.createElement('video');
 		video.srcObject = stream;
+		if(user.id == this.user_id)
+			video.muted = true;
 		video.play();
 
 		const canvas = document.createElement('canvas');
@@ -85,7 +87,7 @@ export default class Fun extends Component {
 
 		document.querySelector("#container").appendChild(this.renderer.domElement)
 
-		this.stream.then(stream => this.addStream(this.user_id, stream));
+		this.stream.then(stream => this.addStream({ id: this.user_id }, stream));
 
 		this.animate()
 
