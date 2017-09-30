@@ -38,9 +38,9 @@ const initPeerConn = (room, user) => {
 	}
 
 	peerConn.oniceconnectionstatechange = e => {
-		console.log('on ice conn sate change', peerConn.iceConnectionState)
+		console.log('on ice conn state change', peerConn.iceConnectionState)
 
-		if(peerConn.iceConnectionState == "disconnected") {
+		if(peerConn.iceConnectionState == "closed") {
 			room._onPeerDisconnect(user, e);
 		}
 	}
