@@ -31,8 +31,7 @@ export default class Fun extends Component {
 
 		const video = document.createElement('video');
 		video.srcObject = stream;
-		if(user.id == this.user_id)
-			video.muted = true;
+		video.muted = true;
 		video.play();
 
 		const canvas = document.createElement('canvas');
@@ -96,7 +95,7 @@ export default class Fun extends Component {
 	animate = () => {
 
 		//this.videoElements.set(user.id, { videoElement: video, videoCanvas: canvas, videoTexture, mesh });
-		for(let vids of this.videoElements.values()) {
+		for(let [user, vids] of this.videoElements) {
 			vids.videoCanvas.getContext('2d').drawImage(vids.videoElement, 0, 0);
 			vids.videoTexture.needsUpdate = true;
 
@@ -104,6 +103,10 @@ export default class Fun extends Component {
 			vids.mesh.rotation.y += 0.01;
 			vids.mesh.position.x = Math.sin((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200 ;
 			vids.mesh.position.y = Math.cos((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200;
+
+			if(user !== this.user_id) {
+				vids.videoElement.muted = false;
+			}
 		}
 
 		this.renderer.render(this.scene, this.camera)
