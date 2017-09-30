@@ -58,7 +58,8 @@ export default class Fun extends Component {
 			videoCanvas: canvas, 
 			videoTexture, 
 			mesh,
-			time: Date.now()
+			time: Date.now(),
+			rand: Math.random() * 100
 		});
 	}
 
@@ -67,7 +68,11 @@ export default class Fun extends Component {
 		const room = new Room(this.parsedQuery.room, this.user_id, this.stream);
 
 		room.onAddStream = (user, event) => this.addStream(user, event.stream)
-		room.onPeerDisconnect = (user, event) => this.videoElements.delete(user.id) 
+		room.onPeerDisconnect = (user, event) => {
+			console.log("DISCONNECT")
+			this.scene.remove(this.videoElements.get(user.id).mesh)
+			this.videoElements.delete(user.id) 
+		}
 
 		this.camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 1, 1000);
 		this.camera.position.z = 400;
@@ -95,8 +100,8 @@ export default class Fun extends Component {
 
 			vids.mesh.rotation.x += 0.005;
 			vids.mesh.rotation.y += 0.01;
-			vids.mesh.position.x = Math.sin((Date.now() - vids.time)/(2 * Math.PI * 500)) * 200;
-			vids.mesh.position.y = Math.cos((Date.now() - vids.time)/(2 * Math.PI * 500)) * 200;
+			vids.mesh.position.x = Math.sin((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200 ;
+			vids.mesh.position.y = Math.cos((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200;
 		}
 
 		this.renderer.render(this.scene, this.camera)

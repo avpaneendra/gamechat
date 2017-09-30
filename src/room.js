@@ -40,7 +40,7 @@ const initPeerConn = (room, user) => {
 	peerConn.oniceconnectionstatechange = e => {
 		console.log('on ice conn state change', peerConn.iceConnectionState)
 
-		if(peerConn.iceConnectionState == "closed") {
+		if(peerConn.iceConnectionState == "closed" || peerConn.iceConnectionState == "failed") {
 			room._onPeerDisconnect(user, e);
 		}
 	}
@@ -69,7 +69,7 @@ export default class Room {
 
 	_onPeerDisconnect(user, event) {
 		const pc = this.peerConnections.get(user.id);
-		pc.close();
+		//pc.close();
 		this.peerConnections.delete(user.id);
 		this.onPeerDisconnect(user, event);
 	}
