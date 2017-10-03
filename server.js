@@ -1,7 +1,6 @@
 const url = require('url')
 const https = require('https')
 const fs = require('fs')
-
 const WebSocket = require('ws')
 
 let opts;
