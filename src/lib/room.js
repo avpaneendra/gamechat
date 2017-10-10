@@ -4,7 +4,6 @@ The Room is the base context for where all shit goes down
 each module would instantiate a room.
 
 anyone else who joins a room with the same id, will dial in automatically
-
 */
 
 const initPeerConn = (room, user) => {
@@ -138,6 +137,13 @@ export default class Room {
 
 		const { payload, user } = msg;
 
+		if(this.peerConnections.has(user.id)) {
+			const existing = this.peerConnections.get(user.id);
+
+			console.log("existing conn: ", existing.iceConnectionState);
+			return;
+		}
+
 		const peerConn = initPeerConn(this, user);
 		this.peerConnections.set(user.id, peerConn);
 
@@ -165,6 +171,13 @@ export default class Room {
 	receiveOffer(payload, user) {
 		// you receive an offer when you join a room 
 		// and the existing members say hello
+
+		if(this.peerConnections.has(user.id)) {
+			const existing = this.peerConnections.get(user.id);
+
+			console.log("existing conn: ", existing.iceConnectionState);
+			return;
+		}
 
 		const peerConn = initPeerConn(this, user);
 
