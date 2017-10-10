@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import queryString from 'query-string'
-import Room from './room';
+import Room from '../lib/room';
 
-import './App.css';
+import './boring.css';
 
 class App extends Component {
 

@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import * as THREE from 'three'
 import queryString from 'query-string'
-import Room from './room'
+import Room from '../lib/room'
 
 const startTime = Date.now();
 
