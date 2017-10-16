@@ -96,7 +96,7 @@ export default class Fun extends Component {
 
 		//this.videoElements.set(user.id, { videoElement: video, videoCanvas: canvas, videoTexture, mesh });
 		for(let [user, vids] of this.videoElements) {
-			vids.videoCanvas.getContext('2d').drawImage(vids.videoElement, 0, 0);
+			vids.videoCanvas.getContext('2d').drawImage(vids.videoElement, 0, 0, 520, 300);
 			vids.videoTexture.needsUpdate = true;
 
 			vids.mesh.rotation.x += 0.005;
