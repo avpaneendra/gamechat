@@ -39,7 +39,7 @@ const initPeerConn = (room, user) => {
 	peerConn.oniceconnectionstatechange = e => {
 		console.log('on ice conn state change', peerConn.iceConnectionState)
 
-		if(peerConn.iceConnectionState == "closed" || peerConn.iceConnectionState == "failed") {
+		if(peerConn.iceConnectionState === "closed" || peerConn.iceConnectionState === "failed") {
 			room._onPeerDisconnect(user, e);
 		}
 	}
@@ -67,7 +67,7 @@ export default class Room {
 	}
 
 	_onPeerDisconnect(user, event) {
-		const pc = this.peerConnections.get(user.id);
+		//const pc = this.peerConnections.get(user.id);
 		//pc.close();
 		this.peerConnections.delete(user.id);
 		this.onPeerDisconnect(user, event);
@@ -75,20 +75,23 @@ export default class Room {
 
 	wsSend(type, payload, targetId) {
 
-		this.ws.send(JSON.stringify({
-			type,
-			room: { id: this.roomId },
-			user: { id: this.userId },
-			target: { id: targetId },
-			payload
-		}))
+		console.log(type, payload, targetId)
+			this.ws.send(JSON.stringify({
+				type,
+				room: { id: this.roomId },
+				user: { id: this.userId },
+				target: { id: `${targetId || ''}` },
+				payload
+			}))
+
 
 	}
 
 	connectWs() {
 
-		this.ws = new WebSocket(`wss://metal.fish:8443?id=${this.roomId}&user=${this.userId}`);
-		//this.ws = new WebSocket(`wss://localhost:8443?id=${this.roomId}&user=${this.userId}`);
+		//this.ws = new WebSocket(`wss://metal.fish:8443?id=${this.roomId}&user=${this.userId}`);
+		this.ws = new WebSocket(`ws://localhost:8080/ws?room=${this.roomId}&user=${this.userId}`);
+		//this.ws = new WebSocket(`wss://7d654d10.ngrok.io/ws?room=${this.roomId}&user=${this.userId}`);
 		this.ws.onopen = () => {
 			console.log('websocket open');
 			this.wsSend("member_join");
@@ -112,6 +115,7 @@ export default class Room {
 	// then everyone will call that person
 	onWebsocketMessage(msg) {
 
+		console.log(msg.data)
 		const parsed = JSON.parse(msg.data);
 		// we expect { type, payload, user }
 		if(parsed.user.id === this.userId) {
@@ -121,6 +125,7 @@ export default class Room {
 		switch(parsed.type) {
 
 			case "signaling":
+				console.log("signlaing!!!")
 				this.onSignal(parsed)
 				break;
 			case "member_join":
@@ -135,7 +140,7 @@ export default class Room {
 
 	onMemberJoin(msg) {
 
-		const { payload, user } = msg;
+		const { user } = msg;
 
 		if(this.peerConnections.has(user.id)) {
 			const existing = this.peerConnections.get(user.id);
@@ -172,6 +177,7 @@ export default class Room {
 		// you receive an offer when you join a room 
 		// and the existing members say hello
 
+		console.log("GOT OFFER")
 		if(this.peerConnections.has(user.id)) {
 			const existing = this.peerConnections.get(user.id);
 
@@ -210,8 +216,10 @@ export default class Room {
 		}
 
 		if(payload.candidate) {
-			this.peerConnections.get(user.id)
-				.addIceCandidate(new RTCIceCandidate(payload.candidate))
+			console.log("onSignal, payload.candidate")
+			//this.stream
+				//.then(() => this.peerConnections.get(user.id).addIceCandidate(new RTCIceCandidate(payload.candidate)))
+				this.peerConnections.get(user.id).addIceCandidate(new RTCIceCandidate(payload.candidate))
 				.then(() => console.log('ice candidate added'))
 				.catch(err => console.error('ice candidate failed', err))
 		}

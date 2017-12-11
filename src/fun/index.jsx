@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import queryString from 'query-string'
 import Room from '../lib/room'
 
-const startTime = Date.now();
+//const startTime = Date.now();
 
 export default class Fun extends Component {
 

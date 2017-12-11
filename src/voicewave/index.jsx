@@ -21,7 +21,6 @@ export default class VoiceWave extends Component {
 		this.stream.then(stream => setTimeout(() => this.onAddStream(this.user_id, stream), 400))
 
 		this.audio_ctx = new AudioContext();
-		const analyzer_node = this.audio_ctx.createAnalyser();
 
 		this.parsedQuery = queryString.parse(this.props.location.search)
 		this.user_id = this.parsedQuery.user || Math.random();
@@ -61,7 +60,7 @@ export default class VoiceWave extends Component {
 		const splineObj = new THREE.Line(geo, material);
 
 		let sound;
-		if(user_id != this.user_id) {
+		if(user_id !== this.user_id) {
 			sound = document.createElement('audio');
 			sound.muted = false;
 			sound.srcObject = stream;
@@ -102,8 +101,8 @@ export default class VoiceWave extends Component {
 					vertices.push(new THREE.Vector2(3 * i - 250, 0, 0));
 				}
 				else {
-					if(i % 6 == 0) {
-						if(i % 12 == 0) {
+					if(i % 6 === 0) {
+						if(i % 12 === 0) {
 							vertices.push(new THREE.Vector3(3*i - 250,  -1 * (val.data[i] + 100), 0));
 						}
 						else {
