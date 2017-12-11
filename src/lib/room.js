@@ -89,7 +89,7 @@ export default class Room {
 
 	connectWs() {
 
-		this.ws = new WebSocket(`wss://metal.fish:8443?id=${this.roomId}&user=${this.userId}`);
+		this.ws = new WebSocket(`wss://socket.gamechat.metal.fish:8443?id=${this.roomId}&user=${this.userId}`);
 		//this.ws = new WebSocket(`ws://localhost:8080/ws?room=${this.roomId}&user=${this.userId}`);
 		this.ws.onopen = () => {
 			console.log('websocket open');

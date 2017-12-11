@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure your application as:
 #
-#     config :backend, key: :value
+#     config :da_backend, key: :value
 #
 # and access this configuration in your application as:
 #
-#     Application.get_env(:backend, :key)
+#     Application.get_env(:da_backend, :key)
 #
 # You can also configure a 3rd-party app:
 #

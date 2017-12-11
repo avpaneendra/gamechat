@@ -1,4 +1,4 @@
-defmodule WebsocketHandler do
+defmodule Backend.WebsocketHandler do
 	@behaviour :cowboy_websocket
 
 	def init(req, state) do
