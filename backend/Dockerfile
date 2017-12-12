@@ -1,4 +1,7 @@
-FROM elixir
+FROM elixir:1.5.2-alpine
+
+RUN apk add --no-cache git
+RUN apk add --no-cache alpine-sdk
 
 RUN mix local.hex --force
 RUN mix local.rebar
