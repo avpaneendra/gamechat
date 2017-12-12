@@ -21,6 +21,8 @@ defmodule Backend.WebsocketHandler do
 		# we want to create this room if it doesn't exist.
 		IO.inspect Registry.lookup(Backend.Registry, room_id)
 
+		:erlang.start_timer(1000, self, [])
+
 		case Registry.lookup(Backend.Registry, room_id) do
 			results when length(results) > 0 ->
 				#for {pid, _} <- results, do: send(pid, {:member_join, user_id})
@@ -78,6 +80,13 @@ defmodule Backend.WebsocketHandler do
 			user: %{ id: user_id },
 			type: "member_join"
 		})}, state}
+	end
+
+	def websocket_info({:timeout, _ref, _msg}, state) do
+
+		:erlang.start_timer(1000, self, [])
+		{:reply, {:text, Poison.encode!(%{ type: "timeout" })}, state}
+
 	end
 
 	def websocket_info(_info, state) do

@@ -89,7 +89,7 @@ export default class Room {
 
 	connectWs() {
 
-		this.ws = new WebSocket(`wss://socket.gamechat.metal.fish:8443?id=${this.roomId}&user=${this.userId}`);
+		this.ws = new WebSocket(`wss://gamechat-socket.metal.fish/ws?room=${this.roomId}&user=${this.userId}`);
 		//this.ws = new WebSocket(`ws://localhost:8080/ws?room=${this.roomId}&user=${this.userId}`);
 		this.ws.onopen = () => {
 			console.log('websocket open');
@@ -116,6 +116,10 @@ export default class Room {
 
 		console.log(msg.data)
 		const parsed = JSON.parse(msg.data);
+
+        if(parsed.type == "timeout") {
+            return;
+        }
 		// we expect { type, payload, user }
 		if(parsed.user.id === this.userId) {
 			console.log('ignoring message')
