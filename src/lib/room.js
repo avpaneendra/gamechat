@@ -76,13 +76,13 @@ export default class Room {
 	wsSend(type, payload, targetId) {
 
 		console.log(type, payload, targetId)
-			this.ws.send(JSON.stringify({
-				type,
-				room: { id: this.roomId },
-				user: { id: this.userId },
-				target: { id: `${targetId || ''}` },
-				payload
-			}))
+		this.ws.send(JSON.stringify({
+			type,
+			room: { id: this.roomId },
+			user: { id: this.userId },
+			target: { id: `${targetId || ''}` },
+			payload
+		}))
 
 
 	}
@@ -94,6 +94,8 @@ export default class Room {
 		this.ws.onopen = () => {
 			console.log('websocket open');
 			this.wsSend("member_join");
+
+			this.pinginterval = setInterval(this.ping, 5000);
 		}
 		this.ws.onerror = err => console.error('websocket error', err)
 		this.ws.onmessage = this.onWebsocketMessage.bind(this);
@@ -102,6 +104,16 @@ export default class Room {
 			this.connectWs();
 		}
 
+	}
+
+	ping = () => {
+		try {
+			this.ws.send(JSON.stringify({ type: "ping" }))
+		}
+		catch(e) {
+			console.error('sending ping failed', e);
+			clearInterval(this.pinginterval);
+		}
 	}
 
 	// the server will tell us all the signaling
