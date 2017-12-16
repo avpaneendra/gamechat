@@ -84,13 +84,12 @@ export default class Room {
 			payload
 		}))
 
-
 	}
 
 	connectWs() {
 
-		this.ws = new WebSocket(`wss://gamechat-socket.metal.fish/ws?room=${this.roomId}&user=${this.userId}`);
-		//this.ws = new WebSocket(`ws://localhost:8080/ws?room=${this.roomId}&user=${this.userId}`);
+		//this.ws = new WebSocket(`wss://gamechat-socket.metal.fish/ws?room=${this.roomId}&user=${this.userId}`);
+		this.ws = new WebSocket(`ws://localhost:8080/ws?room=${this.roomId}&user=${this.userId}`);
 		this.ws.onopen = () => {
 			console.log('websocket open');
 			this.wsSend("member_join");
@@ -129,9 +128,9 @@ export default class Room {
 		console.log(msg.data)
 		const parsed = JSON.parse(msg.data);
 
-        if(parsed.type == "timeout") {
-            return;
-        }
+		if(parsed.type === "timeout") {
+			return;
+		}
 		// we expect { type, payload, user }
 		if(parsed.user.id === this.userId) {
 			console.log('ignoring message')
