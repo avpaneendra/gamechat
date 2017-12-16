@@ -49,10 +49,11 @@ const initPeerConn = (room, user) => {
 
 export default class Room {
 
-	constructor(roomId, userId, getUserMedia) {
+	constructor(roomId, userId, getUserMedia, game) {
 
 		this.roomId = roomId;
 		this.userId = userId;
+		this.game = game;
 		console.log('userid', this.userId)
 
 		this.peerConnections = new Map(); // key: string, value: RTCPeerConnection
@@ -73,7 +74,7 @@ export default class Room {
 		this.onPeerDisconnect(user, event);
 	}
 
-	wsSend(type, payload, targetId) {
+	wsSend(type, payload, targetId, game) {
 
 		console.log(type, payload, targetId)
 		this.ws.send(JSON.stringify({
@@ -81,6 +82,7 @@ export default class Room {
 			room: { id: this.roomId },
 			user: { id: this.userId },
 			target: { id: `${targetId || ''}` },
+			game,
 			payload
 		}))
 
@@ -88,8 +90,8 @@ export default class Room {
 
 	connectWs() {
 
-		//this.ws = new WebSocket(`wss://gamechat-socket.metal.fish/ws?room=${this.roomId}&user=${this.userId}`);
-		this.ws = new WebSocket(`ws://localhost:8080/ws?room=${this.roomId}&user=${this.userId}`);
+		//this.ws = new WebSocket(`wss://gamechat-socket.metal.fish/ws?room=${this.roomId}&user=${this.userId}&game=${this.game || ''}`);
+		this.ws = new WebSocket(`ws://localhost:8080/ws?room=${this.roomId}&user=${this.userId}&game=${this.game || ''}`);
 		this.ws.onopen = () => {
 			console.log('websocket open');
 			this.wsSend("member_join");
@@ -151,6 +153,8 @@ export default class Room {
 				break;
 		}
 	}
+
+	onGameMessage = (data) => console.log('game data received. override me');
 
 	onMemberJoin(msg) {
 

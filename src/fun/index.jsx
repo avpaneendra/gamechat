@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import * as THREE from 'three'
 import queryString from 'query-string'
-import Room from '../lib/room'
 
+import Room from '../lib/room'
+import Base from '../lib/base'
 //const startTime = Date.now();
 
 export default class Fun extends Component {
@@ -66,7 +67,8 @@ export default class Fun extends Component {
 
 	componentDidMount() {
 
-		const room = new Room(this.parsedQuery.room, this.user_id, this.stream);
+		const room = new Room(this.parsedQuery.room, this.user_id, this.stream, "Navigator");
+		this.room = room;
 
 		room.onAddStream = (user, event) => this.addStream(user, event.stream)
 		room.onPeerDisconnect = (user, event) => {
@@ -75,26 +77,43 @@ export default class Fun extends Component {
 			this.videoElements.delete(user.id) 
 		}
 
-		this.camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 1, 1000);
-		this.camera.position.z = 400;
-
-		this.scene = new THREE.Scene();
-
-		this.renderer = new THREE.WebGLRenderer();
-		this.renderer.setPixelRatio(window.devicePixelRatio)
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-
-		document.querySelector("#container").appendChild(this.renderer.domElement)
-
 		this.stream.then(stream => this.addStream({ id: this.user_id }, stream));
 
-		this.animate()
-
+		document.onkeydown = this.onKeyDown;
+		this.room.onGameMessage = this.onGameMessage;
 	}
 
-	animate = () => {
+	onKeyDown = e => {
+		console.log(e.key)
+
+		if(e.key == "ArrowUp") {
+			this.room.wsSend("move", {}, null);
+		}
+
+		if(e.key == "ArrowDown") {
+
+		}
+
+		if(e.key == "ArrowLeft") {
+
+		}
+
+		if(e.key == "ArrowRight") {
+
+		}
+	}
+
+	onGameMessage = data => {
+		console.log('got game message', data)
+	}
+
+	animate = (scene, camera) => {
 
 		//this.videoElements.set(user.id, { videoElement: video, videoCanvas: canvas, videoTexture, mesh });
+		if(this.scene !== scene) {
+			this.scene = scene;
+		}
+
 		for(let [user, vids] of this.videoElements) {
 			vids.videoCanvas.getContext('2d').drawImage(vids.videoElement, 0, 0, 520, 300);
 			vids.videoTexture.needsUpdate = true;
@@ -108,12 +127,10 @@ export default class Fun extends Component {
 				vids.videoElement.muted = false;
 			}
 		}
-
-		this.renderer.render(this.scene, this.camera)
-		requestAnimationFrame(this.animate)
 	}
 
 	render() {
-		return <div id="container"></div>
+		//return <div id="container"></div>
+		return <Base animate={this.animate.bind(this)} />
 	}
 }

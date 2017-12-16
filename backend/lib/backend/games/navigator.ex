@@ -1,5 +1,4 @@
 defmodule Backend.Game.Navigator do
-	use GenServer
 
 	# in this game, each player has a cube with a color.
 	# they can move their cube around, and they send inputs.
@@ -8,14 +7,20 @@ defmodule Backend.Game.Navigator do
 
 	def handle("move", json, %{room_id: room_id, user_id: user_id, game: game}) do
 		
-		# look up this persons previous state on ets.
+		# look up this persons previous state
 		# state is just position, velocity & timestamp
+
+		IO.inspect json
 
 
 		# case Registry.lookup(Backend.Registry, "#{user_id}-#{room_id}-#{game}") do
 		# end
+	end
 
-		
+	def handle(type, json, state) do
+		IO.inspect type
+		IO.inspect json 
+		IO.inspect state
 	end
 	
 

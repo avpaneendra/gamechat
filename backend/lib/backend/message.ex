@@ -27,7 +27,7 @@ defmodule Backend.Message do
 		
 		# find the game associated with the string "game" and pass it to there
 
-		apply(String.to_existing_atom("Backend.Game.#{game}"), :handle, [type, json, state])
+		apply(String.to_existing_atom("Elixir.Backend.Game.#{game}"), :handle, [type, json, state])
 	end
 
 	def handle(type, json, state) do

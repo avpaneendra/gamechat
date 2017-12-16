@@ -3,18 +3,24 @@ defmodule Backend.WebsocketHandler do
 
 	def init(req, state) do
 
-		%{"room" => room_id, "user" => user_id} = String.split(req.qs, ["&", "="]) 
+		query = %{"room" => room_id, "user" => user_id} = String.split(req.qs, ["&", "="]) 
 			|> Enum.chunk_every(2) 
 			|> Enum.map(fn [a, b] -> {a, b} end)
 			|> Map.new
 
+		IO.inspect query
 		IO.inspect room_id
 		IO.inspect user_id
 
-		{:cowboy_websocket, req, %{
-			room_id: room_id,
-			user_id: user_id
-		}}
+		%{"game" => game} = query
+
+		case query do
+			%{"room" => room_id, "user" => user_id, "game" => game} ->
+				{:cowboy_websocket, req, %{ room_id: room_id, user_id: user_id, game: game}}
+			_ ->
+				{:cowboy_websocket, req, %{ room_id: room_id, user_id: user_id }}
+		end
+
 	end
 
 	def websocket_init(%{room_id: room_id, user_id: user_id} = state) do
