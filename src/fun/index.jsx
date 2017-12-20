@@ -50,8 +50,10 @@ export default class Fun extends Component {
 		})
 
 		const mesh = new THREE.Mesh(geometry, material)
-		mesh.position.x = Math.random() * 400 - 200;
-		mesh.position.y = Math.random() * 200 - 100;
+		//mesh.position.x = Math.random() * 400 - 200;
+		//mesh.position.y = Math.random() * 200 - 100;
+		mesh.position.x = 0;
+		mesh.position.y = 0; 
 		this.scene.add(mesh)
 		console.log('added to scene')
 
@@ -86,21 +88,34 @@ export default class Fun extends Component {
 	onKeyDown = e => {
 		console.log(e.key)
 
-		if(e.key == "ArrowUp") {
-			this.room.wsSend("move", {}, null);
+		const v = this.videoElements.get(this.user_id);
+		//const d = { up: false, down: false, left: false, right: false };
+		// keep "virtual" position of my guy locally in mesh.position.
+		// transmit the 'move' 
+
+		const move_keys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+
+		if(move_keys.has(e.key)) {
+			e.preventDefault();
+
+			this.room.wsSend("move", { 
+				direction: e.key
+			});
+
+			if(e.key === "ArrowUp") {
+				v.mesh.position.y += 10;
+			}
+			else if(e.key === "ArrowDown") {
+				v.mesh.position.y -= 10;
+			}
+			else if(e.key === "ArrowRight") {
+				v.mesh.position.x += 10;
+			}
+			else if(e.key === "ArrowLeft") {
+				v.mesh.position.x -= 10;
+			}
 		}
 
-		if(e.key == "ArrowDown") {
-
-		}
-
-		if(e.key == "ArrowLeft") {
-
-		}
-
-		if(e.key == "ArrowRight") {
-
-		}
 	}
 
 	onGameMessage = data => {
@@ -118,10 +133,12 @@ export default class Fun extends Component {
 			vids.videoCanvas.getContext('2d').drawImage(vids.videoElement, 0, 0, 520, 300);
 			vids.videoTexture.needsUpdate = true;
 
+			/*
 			vids.mesh.rotation.x += 0.005;
 			vids.mesh.rotation.y += 0.01;
 			vids.mesh.position.x = Math.sin((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200 ;
 			vids.mesh.position.y = Math.cos((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200;
+			*/
 
 			if(user !== this.user_id) {
 				vids.videoElement.muted = false;

@@ -1,5 +1,19 @@
 defmodule Backend.Message do
-	
+
+	def init(pid, state) do
+
+		# room is initted into registry by websocket worker.
+		# here we should init game if there is one
+		# if not we don't do anything.
+
+		IO.puts "no game associated with state"
+	end
+
+	def init(pid, %{"game" => game, "room" => room_id, "user" => user_id} = state) do
+		
+
+	end
+
 	# signaling, ping and member_join are fundamental to all rooms so handled here
 	def handle("signaling", json, %{room_id: room_id, user_id: user_id} = state)  do
 
@@ -28,6 +42,7 @@ defmodule Backend.Message do
 		# find the game associated with the string "game" and pass it to there
 
 		apply(String.to_existing_atom("Elixir.Backend.Game.#{game}"), :handle, [type, json, state])
+
 	end
 
 	def handle(type, json, state) do

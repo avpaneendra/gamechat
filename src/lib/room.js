@@ -74,7 +74,7 @@ export default class Room {
 		this.onPeerDisconnect(user, event);
 	}
 
-	wsSend(type, payload, targetId, game) {
+	wsSend(type, payload, targetId) {
 
 		console.log(type, payload, targetId)
 		this.ws.send(JSON.stringify({
@@ -82,7 +82,6 @@ export default class Room {
 			room: { id: this.roomId },
 			user: { id: this.userId },
 			target: { id: `${targetId || ''}` },
-			game,
 			payload
 		}))
 
@@ -96,7 +95,9 @@ export default class Room {
 			console.log('websocket open');
 			this.wsSend("member_join");
 
-			this.pinginterval = setInterval(this.ping, 5000);
+			console.log('connecting')
+			if(this.pinginterval == undefined) 
+				this.pinginterval = setInterval(this.ping, 5000);
 		}
 		this.ws.onerror = err => console.error('websocket error', err)
 		this.ws.onmessage = this.onWebsocketMessage.bind(this);
