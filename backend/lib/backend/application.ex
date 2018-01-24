@@ -8,6 +8,8 @@ defmodule Backend.Application do
 	def start(_type, _args) do
 		children = [
 			{Registry, keys: :duplicate, name: Backend.Registry},
+			{Registry, keys: :unique, name: Backend.GameRegistry},
+			Backend.GameSupervisor,
 			Backend.Server
 		]
 
