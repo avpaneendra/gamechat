@@ -91,8 +91,8 @@ export default class Room {
 
 	connectWs() {
 
-		//this.ws = new WebSocket(`wss://gamechat-socket.metal.fish/ws?room=${this.roomId}&user=${this.userId}&game=${this.game || ''}`);
-		this.ws = new WebSocket(`ws://localhost:8080/ws?room=${this.roomId}&user=${this.userId}&game=${this.game || ''}`);
+		this.ws = new WebSocket(`wss://gamechat-socket.metal.fish/ws?room=${this.roomId}&user=${this.userId}&game=${this.game || ''}`);
+		//this.ws = new WebSocket(`ws://localhost:8080/ws?room=${this.roomId}&user=${this.userId}&game=${this.game || ''}`);
 		this.ws.onopen = () => {
 			console.log('websocket open');
 			this.wsSend("member_join");
