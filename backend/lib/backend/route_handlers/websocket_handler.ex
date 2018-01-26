@@ -14,8 +14,11 @@ defmodule Backend.WebsocketHandler do
 
 		%{"game" => game} = query
 
+		IO.puts game
+		IO.inspect byte_size(game)
+
 		case query do
-			%{"room" => room_id, "user" => user_id, "game" => game} when length(game) > 1 ->
+			%{"room" => room_id, "user" => user_id, "game" => game} when byte_size(game) > 0 ->
 				{:cowboy_websocket, req, %{ room_id: room_id, user_id: user_id, game: game}}
 			_ ->
 				{:cowboy_websocket, req, %{ room_id: room_id, user_id: user_id }}
@@ -36,7 +39,16 @@ defmodule Backend.WebsocketHandler do
 		{:ok, state}
 	end
 
-	def terminate(reason, _req, state) do
+	def terminate(reason, _req, %{room_id: room_id, user_id: user_id, game: game} = state) do
+		
+		Backend.Message.user_exit(state)
+		IO.puts "#{state.user_id} exit"
+		IO.inspect reason
+		:ok
+	end
+	
+	def terminate(reason, _req, %{room_id: room_id, user_id: user_id} = state) do
+		
 		IO.puts "#{state.user_id} exit"
 		IO.inspect reason
 		:ok

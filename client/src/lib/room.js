@@ -77,7 +77,7 @@ export default class Room {
 	wsSend(type, payload, targetId) {
 
 		console.log(type, payload, targetId)
-		if(this.ws.OPEN) {
+		if(this.ws.readyState === this.ws.OPEN) {
 			this.ws.send(JSON.stringify({
 				type,
 				room: { id: this.roomId },
