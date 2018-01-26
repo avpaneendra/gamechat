@@ -15,7 +15,7 @@ defmodule Backend.WebsocketHandler do
 		%{"game" => game} = query
 
 		case query do
-			%{"room" => room_id, "user" => user_id, "game" => game} ->
+			%{"room" => room_id, "user" => user_id, "game" => game} when length(game) > 1 ->
 				{:cowboy_websocket, req, %{ room_id: room_id, user_id: user_id, game: game}}
 			_ ->
 				{:cowboy_websocket, req, %{ room_id: room_id, user_id: user_id }}

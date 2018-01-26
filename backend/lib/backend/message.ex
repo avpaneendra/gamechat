@@ -30,6 +30,13 @@ defmodule Backend.Message do
 
 	def handle("member_join", json, %{room_id: room_id, user_id: user_id}) do
 
+		broadcast(room_id, json)
+	# 	entries = Registry.lookup(Backend.Registry, room_id)
+	# 	for {pid, uid} <- entries, do: send(pid, {:broadcast, json})
+
+	end
+
+	defp broadcast(room_id, json) do
 		entries = Registry.lookup(Backend.Registry, room_id)
 		for {pid, uid} <- entries, do: send(pid, {:broadcast, json})
 	end
@@ -39,9 +46,8 @@ defmodule Backend.Message do
 		# find the game associated with the string "game" and pass it to there
 
 		res = Registry.lookup(Backend.GameRegistry, { room_id, game })
-		IO.inspect res
 		case res do
-			[{pid, _}] -> apply(String.to_existing_atom("Elixir.Backend.Game.#{game}"), :handle, [pid, type, json, state])
+			[{pid, _}] -> broadcast(room_id, apply(String.to_existing_atom("Elixir.Backend.Game.#{game}"), :handle, [pid, type, json, state]))
 			[] -> IO.puts "no game!"
 			_ -> IO.puts "something else in case?"
 		end

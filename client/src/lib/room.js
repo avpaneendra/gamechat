@@ -77,13 +77,15 @@ export default class Room {
 	wsSend(type, payload, targetId) {
 
 		console.log(type, payload, targetId)
-		this.ws.send(JSON.stringify({
-			type,
-			room: { id: this.roomId },
-			user: { id: this.userId },
-			target: { id: `${targetId || ''}` },
-			payload
-		}))
+		if(this.ws.OPEN) {
+			this.ws.send(JSON.stringify({
+				type,
+				room: { id: this.roomId },
+				user: { id: this.userId },
+				target: { id: `${targetId || ''}` },
+				payload
+			}))
+		}
 
 	}
 
@@ -135,7 +137,7 @@ export default class Room {
 			return;
 		}
 		// we expect { type, payload, user }
-		if(parsed.user.id === this.userId) {
+		if(parsed.user && parsed.user.id === this.userId) {
 			console.log('ignoring message')
 			return;
 		}
@@ -150,7 +152,8 @@ export default class Room {
 				this.onMemberJoin(parsed);
 				break;
 			default:
-				console.log("no case for websocket message", parsed.type, parsed);
+				//console.log("no case for websocket message", parsed.type, parsed);
+				this.onGameMessage(parsed)
 				break;
 		}
 	}

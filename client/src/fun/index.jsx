@@ -120,6 +120,23 @@ export default class Fun extends Component {
 
 	onGameMessage = data => {
 		console.log('got game message', data)
+
+		if(data.type == "state") {
+			// data.payload is a map of user ids and positions. update them
+			console.log('got state msg')
+			for(let user_id in data.payload) {
+				user_id = parseFloat(user_id)
+				console.log(user_id, this.videoElements.keys())
+				if(this.user_id == user_id || !this.videoElements.has(user_id)) {
+					continue;
+				}
+
+				console.log('updating position')
+				const v = this.videoElements.get(user_id);
+				v.mesh.position.x = data.payload[user_id].x;
+				v.mesh.position.y = data.payload[user_id].y;
+			}
+		}
 	}
 
 	animate = (scene, camera) => {
