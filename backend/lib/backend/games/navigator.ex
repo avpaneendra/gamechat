@@ -28,12 +28,18 @@ defmodule Backend.Game.Navigator do
 			type: "state",
 			payload: positions
 		}
+	end
 
+	def handle(pid, "shape", json, %{room_id: room_id, user_id: user_id, game: game}) do
+
+		%{"payload" => %{"shape" => shape }} = json
+
+		positions = GenServer.call(pid, {:shape, user_id, shape})
 	end
 
 	def handle_call({:user_enter, user_id}, _from, {room_id, game, positions}) do
 
-		positions = Map.put(positions, user_id, %{x: 0, y: 0})
+		positions = Map.put(positions, user_id, %{x: 0, y: 0, shape: "box"})
 
 		{:reply, :poop, {room_id, game, positions}}
 	end
@@ -55,7 +61,7 @@ defmodule Backend.Game.Navigator do
 	def handle_call({:move, user_id, direction}, _from, {room_id, game, positions} = state) do
 		# IO.puts "move"
 
-		%{x: x, y: y} = if (Map.has_key?(positions, user_id)), do: positions[user_id], else: %{x: 0, y: 0}
+		%{x: x, y: y, shape: s} = if (Map.has_key?(positions, user_id)), do: positions[user_id], else: %{x: 0, y: 0, shape: "box"}
 
 		case direction do
 			"ArrowLeft" -> 
@@ -73,10 +79,19 @@ defmodule Backend.Game.Navigator do
 			_ -> IO.puts "no match for direction"
 		end
 
-		positions = Map.put(positions, user_id, %{x: x, y: y})
+		positions = Map.put(positions, user_id, %{x: x, y: y, shape: s})
 
 		{:reply, positions, {room_id, game, positions}}
 
+	end
+
+	def handle_call({:shape, user_id, shape}, _from, {room_id, game, positions} = state) do
+		
+		%{x: x, y: y, shape: s} = if (Map.has_key?(positions, user_id)), do: positions[user_id], else: %{x: 0, y: 0, shape: "box"}
+
+		positions = Map.put(positions, user_id, %{x: x, y: y, shape: shape})
+
+		{:reply, positions, {room_id, game, positions}}
 	end
 
 	def handle(type, json, state) do

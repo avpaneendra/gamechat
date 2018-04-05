@@ -6,6 +6,43 @@ import Room from '../lib/room'
 import Base from '../lib/base'
 //const startTime = Date.now();
 
+const shapes = [
+	"plane",
+	"box",
+	"dodecahedron",
+	"icosahedron",
+	"cone",
+	"cylinder"
+]
+
+const getShapeFromKey = (key) => {
+	if(key == "plane") {
+		return new THREE.PlaneBufferGeometry(100, 100);
+	}
+
+	if(key == "box") {
+		return new THREE.BoxBufferGeometry(100, 100, 100);
+	}
+
+	if(key == "dodecahedron") {
+		return new THREE.DodecahedronGeometry(50, 5);
+	}
+
+	if(key == "icosahedron") {
+		return new THREE.IcosahedronGeometry(50, 5)
+	}
+	
+	if(key == "cone") {
+		return new THREE.ConeBufferGeometry(50, 100);
+	}
+
+	if(key == "cylinder") {
+		return new THREE.CylinderBufferGeometry(50, 50, 100);
+	}
+
+	return new THREE.ConeBufferGeometry(50, 100);
+}
+
 export default class Fun extends Component {
 
 	constructor(props) {
@@ -17,6 +54,8 @@ export default class Fun extends Component {
 			video: true,
 			audio: true
 		})
+
+		this.shape_index = 0;
 
 		this.user_id = this.parsedQuery.user || Math.random();
 
@@ -95,6 +134,15 @@ export default class Fun extends Component {
 
 		const move_keys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 
+		if(e.key == " ") {
+			this.shape_index = (this.shape_index + 1) % shapes.length;
+			this.videoElements.get(this.user_id).mesh.geometry = getShapeFromKey(shapes[this.shape_index]);
+
+			this.room.wsSend("shape", {
+				shape: shapes[this.shape_index]
+			})
+		}
+
 		if(move_keys.has(e.key)) {
 			e.preventDefault();
 
@@ -126,16 +174,20 @@ export default class Fun extends Component {
 			console.log('got state msg')
 			for(let user_id in data.payload) {
 				user_id = parseFloat(user_id)
-				console.log(user_id, this.videoElements.keys())
 				if(this.user_id == user_id || !this.videoElements.has(user_id)) {
 					continue;
 				}
 
 				console.log('updating position')
 				const v = this.videoElements.get(user_id);
-				v.mesh.position.x = data.payload[user_id].x;
-				v.mesh.position.y = data.payload[user_id].y;
+				const d = data.payload[user_id];
+				v.mesh.position.x = d.x;
+				v.mesh.position.y = d.y;
+
+				v.mesh.geometry = getShapeFromKey(d.shape)
+
 			}
+
 		}
 	}
 

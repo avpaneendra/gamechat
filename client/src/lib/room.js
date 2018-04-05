@@ -5,6 +5,8 @@ each module would instantiate a room.
 
 anyone else who joins a room with the same id, will dial in automatically
 */
+//const baseUrl = "wss://gamechat-socket.metal.fish/ws"
+const baseUrl = "ws://localhost:8080/ws"
 
 const initPeerConn = (room, user) => {
 	const peerConn = new RTCPeerConnection({
@@ -32,6 +34,7 @@ const initPeerConn = (room, user) => {
 			room.wsSend("signaling", { candidate: e.candidate }, user.id);
 		}
 	}
+
 	peerConn.ondatachannel = e => {
 		e.channel.onmessage = msg => console.log('msg ', msg);
 	}
@@ -91,8 +94,7 @@ export default class Room {
 
 	connectWs() {
 
-		this.ws = new WebSocket(`wss://gamechat-socket.metal.fish/ws?room=${this.roomId}&user=${this.userId}&game=${this.game || ''}`);
-		//this.ws = new WebSocket(`ws://localhost:8080/ws?room=${this.roomId}&user=${this.userId}&game=${this.game || ''}`);
+		this.ws = new WebSocket(`${baseUrl}?room=${this.roomId}&user=${this.userId}&game=${this.game || ''}`);
 		this.ws.onopen = () => {
 			console.log('websocket open');
 			this.wsSend("member_join");
