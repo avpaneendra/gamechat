@@ -1,5 +1,6 @@
 const url = require('url')
-const https = require('https')
+//const https = require('https')
+const http = require('http');
 const fs = require('fs')
 const WebSocket = require('ws')
 
@@ -19,7 +20,8 @@ else {
 	}
 }
 
-const server = https.createServer(opts, (req, res) => { res.end('hi') }).listen(8443);
+const server = http.createServer((req, res) => { res.end('hi') }).listen(4423)
+//const server = https.createServer(opts, (req, res) => { res.end('hi') }).listen(8443);
 
 const wss = new WebSocket.Server({ server })
 
