@@ -37,9 +37,26 @@ defmodule Backend.Game.Navigator do
 		positions = GenServer.call(pid, {:shape, user_id, shape})
 	end
 
+	def handle(pid, "spin", json, %{user_id: uid} = state) do
+		%{"payload" => %{"spin" => direction}} = json
+
+		increment = 0.01
+		# xspin, yspin, zspin
+		case direction do
+			"x-up" -> GenServer.call(pid, {:spin, uid, :xspin, increment})
+			"x-down" -> GenServer.call(pid, {:spin, uid, :xspin, -increment})
+			"yup" -> GenServer.call(pid, {:spin, uid, :yspin, increment})
+			"ydown" -> GenServer.call(pid, {:spin, uid, :yspin, -increment})
+			"zup" -> GenServer.call(pid, {:spin, uid, :zspin, increment})
+			"zdown" -> GenServer.call(pid, {:spin, uid, :zspin, -increment})
+			other -> IO.puts other
+		end
+
+	end
+
 	def handle_call({:user_enter, user_id}, _from, {room_id, game, positions}) do
 
-		positions = Map.put(positions, user_id, %{x: 0, y: 0, shape: "box"})
+		positions = Map.put(positions, user_id, %{x: 0, y: 0, shape: "box", xspin: 0, yspin: 0, zspin: 0})
 
 		{:reply, :poop, {room_id, game, positions}}
 	end
@@ -61,7 +78,7 @@ defmodule Backend.Game.Navigator do
 	def handle_call({:move, user_id, direction}, _from, {room_id, game, positions} = state) do
 		# IO.puts "move"
 
-		%{x: x, y: y, shape: s} = if (Map.has_key?(positions, user_id)), do: positions[user_id], else: %{x: 0, y: 0, shape: "box"}
+		%{x: x, y: y } = loc = if (Map.has_key?(positions, user_id)), do: positions[user_id], else: %{x: 0, y: 0, shape: "box"}
 
 		case direction do
 			"ArrowLeft" -> 
@@ -79,7 +96,11 @@ defmodule Backend.Game.Navigator do
 			_ -> IO.puts "no match for direction"
 		end
 
-		positions = Map.put(positions, user_id, %{x: x, y: y, shape: s})
+		loc = loc
+		|> Map.put(:x, x)
+		|> Map.put(:y, y)
+
+		positions = Map.put(positions, user_id, loc)
 
 		{:reply, positions, {room_id, game, positions}}
 
@@ -87,11 +108,24 @@ defmodule Backend.Game.Navigator do
 
 	def handle_call({:shape, user_id, shape}, _from, {room_id, game, positions} = state) do
 		
-		%{x: x, y: y, shape: s} = if (Map.has_key?(positions, user_id)), do: positions[user_id], else: %{x: 0, y: 0, shape: "box"}
+		loc = if (Map.has_key?(positions, user_id)), do: positions[user_id], else: %{x: 0, y: 0, shape: "box"}
 
-		positions = Map.put(positions, user_id, %{x: x, y: y, shape: shape})
+		positions = Map.put(positions, user_id, Map.put(loc, :shape, shape))
 
 		{:reply, positions, {room_id, game, positions}}
+	end
+
+	def handle_call({:spin, user_id, direction}, _from, {room_id, game, positions} = state) do
+
+		loc = positions[user_id]
+
+		curr = Map.get(loc, direction)
+
+		positions = Map.put(positions, user_id, Map.put(loc, direction, curr + 0.01))
+
+		{:reply, positions, {room_id, game, positions}}
+
+
 	end
 
 	def handle(type, json, state) do

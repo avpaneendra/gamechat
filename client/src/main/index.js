@@ -35,7 +35,7 @@ class Main extends Component {
 			<div className="thing">
 				<div>Select a room name:</div>
 				<input type="text" value={this.state.room} onChange={this.onUpdate} />
-				<div>Select a Room type</div>
+				<div className="select">Select a Room type</div>
 				<label>
 					<input type="radio" value="fun" checked={this.state.roomType == 'fun'} onChange={this.radio} />
 					Fun Cubes

@@ -20,3 +20,7 @@
 	text-align: center;
 	cursor: pointer;
 }
+
+.big-main .select, .big-main .go {
+	margin-top: 20px;
+}

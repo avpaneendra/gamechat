@@ -25,11 +25,11 @@ const getShapeFromKey = (key) => {
 	}
 
 	if(key == "dodecahedron") {
-		return new THREE.DodecahedronGeometry(50, 5);
+		return new THREE.DodecahedronGeometry(50, 1);
 	}
 
 	if(key == "icosahedron") {
-		return new THREE.IcosahedronGeometry(50, 5)
+		return new THREE.IcosahedronGeometry(50, 1)
 	}
 	
 	if(key == "cone") {
@@ -54,6 +54,7 @@ export default class Fun extends Component {
 			video: true,
 			audio: true
 		})
+
 
 		this.shape_index = 0;
 
@@ -101,6 +102,7 @@ export default class Fun extends Component {
 			videoCanvas: canvas, 
 			videoTexture, 
 			mesh,
+			state: { xspin: 0, yspin: 0, zspin: 0 },
 			time: Date.now(),
 			rand: Math.random() * 100
 		});
@@ -133,6 +135,7 @@ export default class Fun extends Component {
 		// transmit the 'move' 
 
 		const move_keys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+		const spin_keys = new Set(["i", "j", "k", "l"]);
 
 		if(e.key == " ") {
 			this.shape_index = (this.shape_index + 1) % shapes.length;
@@ -141,6 +144,58 @@ export default class Fun extends Component {
 			this.room.wsSend("shape", {
 				shape: shapes[this.shape_index]
 			})
+		}
+
+		if(spin_keys.has(e.key)) {
+			const increment = 0.01;
+			const v = this.videoElements.get(this.user_id);
+
+			if(e.key == "i") {
+				this.room.wsSend("spin", { "spin": "xup"})
+
+				console.log(v.xspin, increment, v.xspin + increment)
+				this.videoElements.set(this.user_id, {
+					...v,
+					state: {
+						...v.state,
+						xspin: v.state.xspin + increment
+					}
+				})
+			}
+			if(e.key == "j") {
+				this.room.wsSend("spin", { "spin": "zdown"})
+
+				this.videoElements.set(this.user_id, {
+					...v,
+					state: {
+						...v.state,
+						zspin: v.state.zspin - increment
+					}
+				})
+
+			}
+			if(e.key == "k") {
+				this.room.wsSend("spin", { "spin": "xdown"})
+
+				this.videoElements.set(this.user_id, {
+					...v,
+					state: {
+						...v.state,
+						xspin: v.state.xspin - increment
+					}
+				})
+			}
+			if(e.key == "l") {
+				this.room.wsSend("spin", { "spin": "zup"})
+
+				this.videoElements.set(this.user_id, {
+					...v,
+					state: {
+						...v.state,
+						zspin: v.state.zspin + increment
+					}
+				})
+			}
 		}
 
 		if(move_keys.has(e.key)) {
@@ -184,6 +239,10 @@ export default class Fun extends Component {
 				v.mesh.position.x = d.x;
 				v.mesh.position.y = d.y;
 
+				v.state.xspin = d.xspin;
+				v.state.yspin = d.yspin;
+				v.state.zspin = d.zspin;
+
 				v.mesh.geometry = getShapeFromKey(d.shape)
 
 			}
@@ -202,17 +261,20 @@ export default class Fun extends Component {
 			vids.videoCanvas.getContext('2d').drawImage(vids.videoElement, 0, 0, 520, 300);
 			vids.videoTexture.needsUpdate = true;
 
+			console.log(vids.state)
+			vids.mesh.rotation.x += vids.state.xspin;
+			vids.mesh.rotation.y += vids.state.yspin;
+			vids.mesh.rotation.z += vids.state.zspin;
 			/*
-			vids.mesh.rotation.x += 0.005;
-			vids.mesh.rotation.y += 0.01;
 			vids.mesh.position.x = Math.sin((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200 ;
 			vids.mesh.position.y = Math.cos((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200;
-			*/
+			*/;
 
 			if(user !== this.user_id) {
 				vids.videoElement.muted = false;
 			}
 		}
+
 	}
 
 	render() {
