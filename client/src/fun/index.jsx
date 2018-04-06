@@ -54,6 +54,7 @@ export default class Fun extends Component {
 			video: true,
 			audio: true
 		})
+		.catch(err => navigator.mediaDevices.getUserMedia({ audio: true }))
 
 
 		this.shape_index = 0;

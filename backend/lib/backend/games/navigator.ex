@@ -43,12 +43,13 @@ defmodule Backend.Game.Navigator do
 		increment = 0.01
 		# xspin, yspin, zspin
 		case direction do
-			"x-up" -> GenServer.call(pid, {:spin, uid, :xspin, increment})
-			"x-down" -> GenServer.call(pid, {:spin, uid, :xspin, -increment})
+			"xup" -> GenServer.call(pid, {:spin, uid, :xspin, increment})
+			"xdown" -> GenServer.call(pid, {:spin, uid, :xspin, -increment})
 			"yup" -> GenServer.call(pid, {:spin, uid, :yspin, increment})
 			"ydown" -> GenServer.call(pid, {:spin, uid, :yspin, -increment})
 			"zup" -> GenServer.call(pid, {:spin, uid, :zspin, increment})
 			"zdown" -> GenServer.call(pid, {:spin, uid, :zspin, -increment})
+			"stop" -> GenServer.call(pid, {:spin, uid, :stop})
 			other -> IO.puts other
 		end
 
@@ -115,24 +116,20 @@ defmodule Backend.Game.Navigator do
 		{:reply, positions, {room_id, game, positions}}
 	end
 
-	def handle_call({:spin, user_id, direction}, _from, {room_id, game, positions} = state) do
+	def handle_call({:spin, user_id, direction, increment}, _from, {room_id, game, positions} = state) do
 
 		loc = positions[user_id]
 
 		curr = Map.get(loc, direction)
 
-		positions = Map.put(positions, user_id, Map.put(loc, direction, curr + 0.01))
+		positions = Map.put(positions, user_id, Map.put(loc, direction, curr + increment))
 
 		{:reply, positions, {room_id, game, positions}}
 	end
 
-	def handle_call({:spin, user_id, "stop"}, _from, {room_id, game, positions} = state) do
+	def handle_call({:spin, user_id, :stop}, _from, {room_id, game, positions} = state) do
 
-		loc = positions[user_id]
-			|> Map.put("xspin", 0)
-			|> Map.put("yspin", 0)
-			|> Map.put("zspin", 0)
-
+		loc = %{ positions[user_id] | "xspin": 0, "yspin": 0, "zspin": 0 } 
 
 		{:reply, positions, {room_id, game, Map.put(positions, user_id, loc)}}
 
