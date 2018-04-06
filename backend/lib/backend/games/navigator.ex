@@ -35,6 +35,11 @@ defmodule Backend.Game.Navigator do
 		%{"payload" => %{"shape" => shape }} = json
 
 		positions = GenServer.call(pid, {:shape, user_id, shape})
+
+		%{
+			type: "state",
+			payload: positions
+		}
 	end
 
 	def handle(pid, "spin", json, %{user_id: uid} = state) do
@@ -42,7 +47,7 @@ defmodule Backend.Game.Navigator do
 
 		increment = 0.01
 		# xspin, yspin, zspin
-		case direction do
+		positions = case direction do
 			"xup" -> GenServer.call(pid, {:spin, uid, :xspin, increment})
 			"xdown" -> GenServer.call(pid, {:spin, uid, :xspin, -increment})
 			"yup" -> GenServer.call(pid, {:spin, uid, :yspin, increment})
@@ -52,6 +57,11 @@ defmodule Backend.Game.Navigator do
 			"stop" -> GenServer.call(pid, {:spin, uid, :stop})
 			other -> IO.puts other
 		end
+
+		%{
+			type: "state",
+			payload: positions
+		}
 
 	end
 
