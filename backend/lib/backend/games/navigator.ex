@@ -124,7 +124,17 @@ defmodule Backend.Game.Navigator do
 		positions = Map.put(positions, user_id, Map.put(loc, direction, curr + 0.01))
 
 		{:reply, positions, {room_id, game, positions}}
+	end
 
+	def handle_call({:spin, user_id, "stop"}, _from, {room_id, game, positions} = state) do
+
+		loc = positions[user_id]
+			|> Map.put("xspin", 0)
+			|> Map.put("yspin", 0)
+			|> Map.put("zspin", 0)
+
+
+		{:reply, positions, {room_id, game, Map.put(positions, user_id, loc)}}
 
 	end
 

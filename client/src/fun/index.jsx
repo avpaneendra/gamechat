@@ -135,7 +135,7 @@ export default class Fun extends Component {
 		// transmit the 'move' 
 
 		const move_keys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
-		const spin_keys = new Set(["i", "j", "k", "l"]);
+		const spin_keys = new Set(["i", "j", "k", "l", "q"]);
 
 		if(e.key == " ") {
 			this.shape_index = (this.shape_index + 1) % shapes.length;
@@ -150,10 +150,22 @@ export default class Fun extends Component {
 			const increment = 0.01;
 			const v = this.videoElements.get(this.user_id);
 
+			if(e.key == "q") {
+				this.room.wsSend("spin", { "spin": "stop"})
+				this.videoElements.set(this.user_id, {
+					...v,
+					state: {
+						...v.state,
+						xspin: 0,
+						yspin: 0,
+						zspin: 0
+					}
+				})
+			}
+
 			if(e.key == "i") {
 				this.room.wsSend("spin", { "spin": "xup"})
 
-				console.log(v.xspin, increment, v.xspin + increment)
 				this.videoElements.set(this.user_id, {
 					...v,
 					state: {
@@ -162,6 +174,7 @@ export default class Fun extends Component {
 					}
 				})
 			}
+
 			if(e.key == "j") {
 				this.room.wsSend("spin", { "spin": "zdown"})
 
@@ -261,7 +274,6 @@ export default class Fun extends Component {
 			vids.videoCanvas.getContext('2d').drawImage(vids.videoElement, 0, 0, 520, 300);
 			vids.videoTexture.needsUpdate = true;
 
-			console.log(vids.state)
 			vids.mesh.rotation.x += vids.state.xspin;
 			vids.mesh.rotation.y += vids.state.yspin;
 			vids.mesh.rotation.z += vids.state.zspin;

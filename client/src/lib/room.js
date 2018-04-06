@@ -5,8 +5,8 @@ each module would instantiate a room.
 
 anyone else who joins a room with the same id, will dial in automatically
 */
-//const baseUrl = "wss://gamechat-socket.metal.fish/ws"
-const baseUrl = "ws://localhost:8080/ws"
+const baseUrl = "wss://gamechat-socket.metal.fish/ws"
+//const baseUrl = "ws://localhost:8080/ws"
 
 const initPeerConn = (room, user) => {
 	const peerConn = new RTCPeerConnection({
