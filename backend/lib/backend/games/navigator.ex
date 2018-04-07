@@ -71,7 +71,12 @@ defmodule Backend.Game.Navigator do
 
 	def handle_call({:user_enter, user_id}, _from, {room_id, game, positions}) do
 
-		positions = Map.put(positions, user_id, %{ position: %{x: 0, y: 0}, shape: "box", rotation: %{x: 0, y: 0, z: 0}, orientation: %{x: 0, y: 0, z: 0}})
+		positions = Map.put(positions, user_id, %{ 
+			position: %{x: 0, y: 0},
+			rotation: %{x: 0, y: 0, z: 0},
+			orientation: %{x: 0, y: 0, z: 0},
+			shape: "plane"
+		})
 
 		{:reply, positions, {room_id, game, positions}}
 	end
@@ -92,13 +97,14 @@ defmodule Backend.Game.Navigator do
 
 		{_, updated} = Kernel.get_and_update_in(positions, [user_id, :position, key], &{&1, &1 + increment })
 
-		{:reply, positions, {room_id, game, updated}}
+		{:reply, updated, {room_id, game, updated}}
 
 	end
 
 	def handle_call({:shape, user_id, shape}, _from, {room_id, game, positions} = state) do
 
-		{:reply, positions, {room_id, game, Kernel.put_in(positions, [user_id, :shape], shape)}}
+		positions = Kernel.put_in(positions, [user_id, :shape], shape)
+		{:reply, positions, {room_id, game, positions}}
 
 	end
 
@@ -106,14 +112,14 @@ defmodule Backend.Game.Navigator do
 
 		{_, updated} = Kernel.get_and_update_in(positions, [user_id, :rotation, direction], &{&1, &1 + increment })
 
-		{:reply, positions, {room_id, game, updated}}
+		{:reply, updated, {room_id, game, updated}}
 	end
 
 	def handle_call({:spin, user_id, :stop}, _from, {room_id, game, positions} = state) do
 
-		loc = %{ positions[user_id] | rotation: %{x: 0, y: 0, z: 0 } } 
+		positions = Kernel.put_in(positions, [user_id, :rotation], %{x: 0, y: 0, z: 0})
 
-		{:reply, positions, {room_id, game, Map.put(positions, user_id, loc)}}
+		{:reply, positions, {room_id, game, positions}}
 
 	end
 

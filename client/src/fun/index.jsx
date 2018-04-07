@@ -43,6 +43,26 @@ const getShapeFromKey = (key) => {
 	return new THREE.ConeBufferGeometry(50, 100);
 }
 
+const getStepSize = (current, target) => {
+
+	const stepSize = 0.75;
+
+	const diff = target - current;
+	const direction = Math.abs(diff)/diff; // either 1 or -1
+
+	return 0.1 * diff;
+
+	if(Math.abs(diff) > 40 * stepSize) {
+		return 0.1 * diff;
+	}
+
+	if(Math.abs(diff) < 1) {
+		return diff;
+	}
+
+	return stepSize * direction;
+}
+
 let lastDraw;
 
 export default class Fun extends Component {
@@ -98,8 +118,7 @@ export default class Fun extends Component {
 		})
 
 		const mesh = new THREE.Mesh(geometry, material)
-		//mesh.position.x = Math.random() * 400 - 200;
-		//mesh.position.y = Math.random() * 200 - 100;
+
 		mesh.position.x = 0;
 		mesh.position.y = 0; 
 		this.scene.add(mesh)
@@ -255,17 +274,18 @@ export default class Fun extends Component {
 				direction: e.key
 			});
 
+			const increment = 10;
 			if(e.key === "ArrowUp") {
-				v.mesh.position.y += 10;
+				v.state.position.y += increment;
 			}
 			else if(e.key === "ArrowDown") {
-				v.mesh.position.y -= 10;
+				v.state.position.y -= increment;
 			}
 			else if(e.key === "ArrowRight") {
-				v.mesh.position.x += 10;
+				v.state.position.x += increment;
 			}
 			else if(e.key === "ArrowLeft") {
-				v.mesh.position.x -= 10;
+				v.state.position.x -= increment;
 			}
 		}
 
@@ -286,13 +306,6 @@ export default class Fun extends Component {
 				console.log('updating position')
 				const v = this.videoElements.get(user_id);
 				const d = data.payload[user_id];
-
-				// should just sync state, and then position should update in draw/predraw
-				// need to know what the diffs are
-				//v.state = d; 
-
-				v.mesh.position.x = d.position.x;
-				v.mesh.position.y = d.position.y;
 
 				v.state = d;
 
@@ -329,6 +342,30 @@ export default class Fun extends Component {
 			vids.mesh.rotation.y += (Math.PI) * vids.state.rotation.y * interval/1000;
 			vids.mesh.rotation.z += (Math.PI) * vids.state.rotation.z * interval/1000;
 
+
+			const stepSize = 1.0;
+			const xdiff = getStepSize(vids.mesh.position.x, vids.state.position.x)
+			const ydiff = getStepSize(vids.mesh.position.y, vids.state.position.y)
+
+			vids.mesh.position.x += xdiff;
+			vids.mesh.position.y += ydiff;
+			/*
+			const xdiff = vids.state.position.x - vids.mesh.position.x;
+			if(Math.abs(xdiff) < 0.5) {
+				vids.mesh.position.x += xdiff;
+			}
+			else {
+				vids.mesh.position.x += xdiff > 0 ? stepSize : -stepSize;
+			}
+
+			const ydiff = vids.state.position.y - vids.mesh.position.y;
+			if(Math.abs(ydiff) < 0.5) {
+				vids.mesh.position.y += ydiff;
+			}
+			else {
+				vids.mesh.position.y += ydiff > 0 ? stepSize : -stepSize;
+			}
+			*/
 			/*
 			vids.mesh.position.x = Math.sin((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200 ;
 			vids.mesh.position.y = Math.cos((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200;
@@ -338,7 +375,6 @@ export default class Fun extends Component {
 				vids.videoElement.muted = false;
 			}
 		}
-
 	}
 
 	render() {
