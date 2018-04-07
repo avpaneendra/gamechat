@@ -17,19 +17,19 @@ const shapes = [
 
 const getShapeFromKey = (key) => {
 	if(key == "plane") {
-		return new THREE.PlaneBufferGeometry(100, 100);
+		return new THREE.PlaneBufferGeometry(200, 100);
 	}
 
 	if(key == "box") {
-		return new THREE.BoxBufferGeometry(100, 100, 100);
+		return new THREE.BoxBufferGeometry(200, 100, 100);
 	}
 
 	if(key == "dodecahedron") {
-		return new THREE.DodecahedronGeometry(50, 1);
+		return new THREE.DodecahedronGeometry(100, 1);
 	}
 
 	if(key == "icosahedron") {
-		return new THREE.IcosahedronGeometry(50, 1)
+		return new THREE.IcosahedronGeometry(100, 1)
 	}
 	
 	if(key == "cone") {
@@ -42,6 +42,8 @@ const getShapeFromKey = (key) => {
 
 	return new THREE.ConeBufferGeometry(50, 100);
 }
+
+let lastDraw;
 
 export default class Fun extends Component {
 
@@ -77,6 +79,10 @@ export default class Fun extends Component {
 		video.play();
 
 		const canvas = document.createElement('canvas');
+		/*
+		canvas.width = 512;
+		canvas.height = 256;
+		*/
 		canvas.width = 512;
 		canvas.height = 256;
 		const ctx = canvas.getContext('2d')
@@ -85,9 +91,10 @@ export default class Fun extends Component {
 
 		const videoTexture = new THREE.Texture(canvas);
 
-		const geometry = new THREE.BoxBufferGeometry(100, 100, 100);
+		const geometry = getShapeFromKey("plane");
 		const material = new THREE.MeshBasicMaterial({
-			map: videoTexture
+			map: videoTexture,
+			side: THREE.DoubleSide
 		})
 
 		const mesh = new THREE.Mesh(geometry, material)
@@ -103,7 +110,22 @@ export default class Fun extends Component {
 			videoCanvas: canvas, 
 			videoTexture, 
 			mesh,
-			state: { xspin: 0, yspin: 0, zspin: 0 },
+			state: { 
+				rotation: {
+					x: 0,
+					y: 0,
+					z: 0
+				},
+				orientation: {
+					x: 0,
+					y: 0,
+					z: 0
+				},
+				position: {
+					x: 0,
+					y: 0
+				}
+			},
 			time: Date.now(),
 			rand: Math.random() * 100
 		});
@@ -148,7 +170,7 @@ export default class Fun extends Component {
 		}
 
 		if(spin_keys.has(e.key)) {
-			const increment = 0.01;
+			const increment = 0.1;
 			const v = this.videoElements.get(this.user_id);
 
 			if(e.key == "q") {
@@ -157,9 +179,11 @@ export default class Fun extends Component {
 					...v,
 					state: {
 						...v.state,
-						xspin: 0,
-						yspin: 0,
-						zspin: 0
+						rotation: {
+							x: 0,
+							y: 0,
+							z: 0
+						}
 					}
 				})
 			}
@@ -171,7 +195,10 @@ export default class Fun extends Component {
 					...v,
 					state: {
 						...v.state,
-						xspin: v.state.xspin + increment
+						rotation: {
+							...v.state.rotation,
+							x: v.state.rotation.x + increment
+						}
 					}
 				})
 			}
@@ -183,7 +210,10 @@ export default class Fun extends Component {
 					...v,
 					state: {
 						...v.state,
-						zspin: v.state.zspin - increment
+						rotation: {
+							...v.state.rotation,
+							z: v.state.rotation.z - increment
+						}
 					}
 				})
 
@@ -195,7 +225,10 @@ export default class Fun extends Component {
 					...v,
 					state: {
 						...v.state,
-						xspin: v.state.xspin - increment
+						rotation: {
+							...v.state.rotation,
+							x: v.state.rotation.x - increment
+						}
 					}
 				})
 			}
@@ -206,7 +239,10 @@ export default class Fun extends Component {
 					...v,
 					state: {
 						...v.state,
-						zspin: v.state.zspin + increment
+						rotation: {
+							...v.state.rotation,
+							z: v.state.rotation.z + increment
+						}
 					}
 				})
 			}
@@ -250,12 +286,15 @@ export default class Fun extends Component {
 				console.log('updating position')
 				const v = this.videoElements.get(user_id);
 				const d = data.payload[user_id];
-				v.mesh.position.x = d.x;
-				v.mesh.position.y = d.y;
 
-				v.state.xspin = d.xspin;
-				v.state.yspin = d.yspin;
-				v.state.zspin = d.zspin;
+				// should just sync state, and then position should update in draw/predraw
+				// need to know what the diffs are
+				//v.state = d; 
+
+				v.mesh.position.x = d.position.x;
+				v.mesh.position.y = d.position.y;
+
+				v.state = d;
 
 				v.mesh.geometry = getShapeFromKey(d.shape)
 
@@ -266,6 +305,17 @@ export default class Fun extends Component {
 
 	animate = (scene, camera) => {
 
+
+		const n = Date.now();
+
+		let interval = 300;    // pretend its been this many milliseconds
+
+		if(lastDraw) {
+			interval = n - lastDraw;
+		}
+
+		lastDraw = n;
+
 		//this.videoElements.set(user.id, { videoElement: video, videoCanvas: canvas, videoTexture, mesh });
 		if(this.scene !== scene) {
 			this.scene = scene;
@@ -275,9 +325,10 @@ export default class Fun extends Component {
 			vids.videoCanvas.getContext('2d').drawImage(vids.videoElement, 0, 0, 520, 300);
 			vids.videoTexture.needsUpdate = true;
 
-			vids.mesh.rotation.x += vids.state.xspin;
-			vids.mesh.rotation.y += vids.state.yspin;
-			vids.mesh.rotation.z += vids.state.zspin;
+			vids.mesh.rotation.x += (Math.PI) * vids.state.rotation.x * interval/1000;
+			vids.mesh.rotation.y += (Math.PI) * vids.state.rotation.y * interval/1000;
+			vids.mesh.rotation.z += (Math.PI) * vids.state.rotation.z * interval/1000;
+
 			/*
 			vids.mesh.position.x = Math.sin((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200 ;
 			vids.mesh.position.y = Math.cos((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200;

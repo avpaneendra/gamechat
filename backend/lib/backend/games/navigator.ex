@@ -9,7 +9,10 @@ defmodule Backend.Game.Navigator do
 	end
 
 	def user_enter(pid, user_id) do
-		GenServer.call(pid, {:user_enter, user_id})
+		%{
+			type: "state",
+			payload: GenServer.call(pid, {:user_enter, user_id})
+		}
 	end
 
 	def user_exit(pid, user_id) do
@@ -18,15 +21,20 @@ defmodule Backend.Game.Navigator do
 
 	def handle(pid, "move", json, %{room_id: room_id, user_id: user_id, game: game}) do
 		
-		# look up this persons previous state
-		# state is just position, velocity & timestamp
-
 		%{"payload" => %{"direction" => direction}} = json
-		positions = GenServer.call(pid, {:move, user_id, direction})
+
+		incr = 10
+		{key, increment} = case direction do
+			"ArrowLeft" -> {:x, -incr}
+			"ArrowRight" -> {:x, incr}
+			"ArrowUp" -> {:y, incr}
+			"ArrowDown" -> {:y, -incr}
+			_ -> IO.puts "no match for direction"
+		end
 
 		%{
 			type: "state",
-			payload: positions
+			payload: GenServer.call(pid, {:move, user_id, key, increment})
 		}
 	end
 
@@ -34,26 +42,23 @@ defmodule Backend.Game.Navigator do
 
 		%{"payload" => %{"shape" => shape }} = json
 
-		positions = GenServer.call(pid, {:shape, user_id, shape})
-
 		%{
 			type: "state",
-			payload: positions
+			payload: GenServer.call(pid, {:shape, user_id, shape})
 		}
 	end
 
 	def handle(pid, "spin", json, %{user_id: uid} = state) do
 		%{"payload" => %{"spin" => direction}} = json
 
-		increment = 0.01
-		# xspin, yspin, zspin
+		increment = 0.1 # rotations per second.
 		positions = case direction do
-			"xup" -> GenServer.call(pid, {:spin, uid, :xspin, increment})
-			"xdown" -> GenServer.call(pid, {:spin, uid, :xspin, -increment})
-			"yup" -> GenServer.call(pid, {:spin, uid, :yspin, increment})
-			"ydown" -> GenServer.call(pid, {:spin, uid, :yspin, -increment})
-			"zup" -> GenServer.call(pid, {:spin, uid, :zspin, increment})
-			"zdown" -> GenServer.call(pid, {:spin, uid, :zspin, -increment})
+			"xup" -> GenServer.call(pid, {:spin, uid, :x, increment})
+			"xdown" -> GenServer.call(pid, {:spin, uid, :x, -increment})
+			"yup" -> GenServer.call(pid, {:spin, uid, :y, increment})
+			"ydown" -> GenServer.call(pid, {:spin, uid, :y, -increment})
+			"zup" -> GenServer.call(pid, {:spin, uid, :z, increment})
+			"zdown" -> GenServer.call(pid, {:spin, uid, :z, -increment})
 			"stop" -> GenServer.call(pid, {:spin, uid, :stop})
 			other -> IO.puts other
 		end
@@ -62,19 +67,16 @@ defmodule Backend.Game.Navigator do
 			type: "state",
 			payload: positions
 		}
-
 	end
 
 	def handle_call({:user_enter, user_id}, _from, {room_id, game, positions}) do
 
-		positions = Map.put(positions, user_id, %{x: 0, y: 0, shape: "box", xspin: 0, yspin: 0, zspin: 0})
+		positions = Map.put(positions, user_id, %{ position: %{x: 0, y: 0}, shape: "box", rotation: %{x: 0, y: 0, z: 0}, orientation: %{x: 0, y: 0, z: 0}})
 
-		{:reply, :poop, {room_id, game, positions}}
+		{:reply, positions, {room_id, game, positions}}
 	end
 
 	def handle_cast({:user_exit, user_id}, {room_id, game, positions} = state) do
-		# check if there are any other users
-		# if not, kill urself
 
 		positions = Map.delete(positions, user_id)
 
@@ -86,60 +88,30 @@ defmodule Backend.Game.Navigator do
 
 	end
 
-	def handle_call({:move, user_id, direction}, _from, {room_id, game, positions} = state) do
-		# IO.puts "move"
+	def handle_call({:move, user_id, key, increment}, _from, {room_id, game, positions} = state) do
 
-		%{x: x, y: y } = loc = if (Map.has_key?(positions, user_id)), do: positions[user_id], else: %{x: 0, y: 0, shape: "box"}
+		{_, updated} = Kernel.get_and_update_in(positions, [user_id, :position, key], &{&1, &1 + increment })
 
-		case direction do
-			"ArrowLeft" -> 
-				# IO.puts "left"
-				x = x - 10
-			"ArrowRight" -> 
-				# IO.puts "right"
-				x = x + 10
-			"ArrowUp" -> 
-				# IO.puts "up"
-				y = y + 10
-			"ArrowDown" -> 
-				# IO.puts "down"
-				y = y - 10
-			_ -> IO.puts "no match for direction"
-		end
-
-		loc = loc
-		|> Map.put(:x, x)
-		|> Map.put(:y, y)
-
-		positions = Map.put(positions, user_id, loc)
-
-		{:reply, positions, {room_id, game, positions}}
+		{:reply, positions, {room_id, game, updated}}
 
 	end
 
 	def handle_call({:shape, user_id, shape}, _from, {room_id, game, positions} = state) do
-		
-		loc = if (Map.has_key?(positions, user_id)), do: positions[user_id], else: %{x: 0, y: 0, shape: "box"}
 
-		positions = Map.put(positions, user_id, Map.put(loc, :shape, shape))
+		{:reply, positions, {room_id, game, Kernel.put_in(positions, [user_id, :shape], shape)}}
 
-		{:reply, positions, {room_id, game, positions}}
 	end
 
 	def handle_call({:spin, user_id, direction, increment}, _from, {room_id, game, positions} = state) do
 
-		loc = positions[user_id]
+		{_, updated} = Kernel.get_and_update_in(positions, [user_id, :rotation, direction], &{&1, &1 + increment })
 
-		curr = Map.get(loc, direction)
-
-		positions = Map.put(positions, user_id, Map.put(loc, direction, curr + increment))
-
-		{:reply, positions, {room_id, game, positions}}
+		{:reply, positions, {room_id, game, updated}}
 	end
 
 	def handle_call({:spin, user_id, :stop}, _from, {room_id, game, positions} = state) do
 
-		loc = %{ positions[user_id] | "xspin": 0, "yspin": 0, "zspin": 0 } 
+		loc = %{ positions[user_id] | rotation: %{x: 0, y: 0, z: 0 } } 
 
 		{:reply, positions, {room_id, game, Map.put(positions, user_id, loc)}}
 
@@ -149,11 +121,6 @@ defmodule Backend.Game.Navigator do
 		IO.inspect type
 		IO.inspect json 
 		IO.inspect state
-	end
-	
-
-	def handle(type, json, state) do
-		# this thing needs to be initted
 	end
 
 end
