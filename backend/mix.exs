@@ -23,7 +23,8 @@ defmodule Backend.Mixfile do
 	defp deps do
 	[
 		{:poison, "~> 3.0"},
-		{:cowboy, github: "ninenines/cowboy", tag: "2.0.0"}
+		{:cowboy, github: "ninenines/cowboy", tag: "2.0.0"},
+		{:graphmath, "~> 1.0.2"}
 	]
 	end
 end

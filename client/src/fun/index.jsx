@@ -135,11 +135,7 @@ export default class Fun extends Component {
 					y: 0,
 					z: 0
 				},
-				orientation: {
-					x: 0,
-					y: 0,
-					z: 0
-				},
+				orientation: new THREE.Quaternion(0, 0, 0, 1),
 				position: {
 					x: 0,
 					y: 0
@@ -191,9 +187,18 @@ export default class Fun extends Component {
 		if(spin_keys.has(e.key)) {
 			const increment = 0.1;
 			const v = this.videoElements.get(this.user_id);
+			const orientation = {
+				w: v.mesh.quaternion.w,
+				x: v.mesh.quaternion.x,
+				y: v.mesh.quaternion.y,
+				z: v.mesh.quaternion.z
+			}
+
+
+			//console.log(v.mesh.rotation)
 
 			if(e.key == "q") {
-				this.room.wsSend("spin", { "spin": "stop"})
+				this.room.wsSend("spin", {spin: "stop", orientation})
 				this.videoElements.set(this.user_id, {
 					...v,
 					state: {
@@ -202,13 +207,14 @@ export default class Fun extends Component {
 							x: 0,
 							y: 0,
 							z: 0
-						}
+						},
+						orientation
 					}
 				})
 			}
 
 			if(e.key == "i") {
-				this.room.wsSend("spin", { "spin": "xup"})
+				this.room.wsSend("spin", {spin: "xup", orientation })
 
 				this.videoElements.set(this.user_id, {
 					...v,
@@ -217,13 +223,14 @@ export default class Fun extends Component {
 						rotation: {
 							...v.state.rotation,
 							x: v.state.rotation.x + increment
-						}
+						},
+						orientation
 					}
 				})
 			}
 
 			if(e.key == "j") {
-				this.room.wsSend("spin", { "spin": "zdown"})
+				this.room.wsSend("spin", {spin: "zdown", orientation})
 
 				this.videoElements.set(this.user_id, {
 					...v,
@@ -232,13 +239,14 @@ export default class Fun extends Component {
 						rotation: {
 							...v.state.rotation,
 							z: v.state.rotation.z - increment
-						}
+						},
+						orientation
 					}
 				})
 
 			}
 			if(e.key == "k") {
-				this.room.wsSend("spin", { "spin": "xdown"})
+				this.room.wsSend("spin", {spin: "xdown", orientation})
 
 				this.videoElements.set(this.user_id, {
 					...v,
@@ -247,12 +255,13 @@ export default class Fun extends Component {
 						rotation: {
 							...v.state.rotation,
 							x: v.state.rotation.x - increment
-						}
+						},
+						orientation
 					}
 				})
 			}
 			if(e.key == "l") {
-				this.room.wsSend("spin", { "spin": "zup"})
+				this.room.wsSend("spin", {spin: "zup", orientation})
 
 				this.videoElements.set(this.user_id, {
 					...v,
@@ -261,7 +270,8 @@ export default class Fun extends Component {
 						rotation: {
 							...v.state.rotation,
 							z: v.state.rotation.z + increment
-						}
+						},
+						orientation
 					}
 				})
 			}
@@ -299,7 +309,8 @@ export default class Fun extends Component {
 			console.log('got state msg')
 			for(let user_id in data.payload) {
 				user_id = parseFloat(user_id)
-				if(this.user_id == user_id || !this.videoElements.has(user_id)) {
+				//if(this.user_id == user_id || !this.videoElements.has(user_id)) {
+				if(!this.videoElements.has(user_id)) {
 					continue;
 				}
 
@@ -312,12 +323,10 @@ export default class Fun extends Component {
 				v.mesh.geometry = getShapeFromKey(d.shape)
 
 			}
-
 		}
 	}
 
 	animate = (scene, camera) => {
-
 
 		const n = Date.now();
 
@@ -338,9 +347,19 @@ export default class Fun extends Component {
 			vids.videoCanvas.getContext('2d').drawImage(vids.videoElement, 0, 0, 520, 300);
 			vids.videoTexture.needsUpdate = true;
 
+			const rot = vids.state.rotation;
 			vids.mesh.rotation.x += (Math.PI) * vids.state.rotation.x * interval/1000;
 			vids.mesh.rotation.y += (Math.PI) * vids.state.rotation.y * interval/1000;
 			vids.mesh.rotation.z += (Math.PI) * vids.state.rotation.z * interval/1000;
+
+			if(rot.x == 0 && rot.y == 0 && rot.z == 0) {
+				const o = vids.state.orientation;
+				// make sure you slerp to the correct orientation.
+				const target = new THREE.Quaternion(o.x, o.y, o.z, o.w);
+				vids.mesh.setRotationFromQuaternion(vids.mesh.quaternion.slerp(target, 0.01))
+
+				//console.log('setting mesh to target', user, target)
+			}
 
 
 			const stepSize = 1.0;

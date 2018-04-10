@@ -8,10 +8,6 @@ defmodule Backend.WebsocketHandler do
 			|> Enum.map(fn [a, b] -> {a, b} end)
 			|> Map.new
 
-		IO.inspect query
-		IO.inspect room_id
-		IO.inspect user_id
-
 		%{"game" => game} = query
 
 		case query do
@@ -26,8 +22,6 @@ defmodule Backend.WebsocketHandler do
 	def websocket_init(%{room_id: room_id, user_id: user_id} = state) do
 		# we want to create this room if it doesn't exist.
 		IO.puts "websocket init@"
-		IO.inspect state
-		IO.inspect Registry.lookup(Backend.Registry, room_id)
 
 		{:ok, _} = Registry.register(Backend.Registry, room_id, user_id)
 
@@ -53,8 +47,8 @@ defmodule Backend.WebsocketHandler do
 
 	def websocket_handle({:text, content}, %{room_id: room_id, user_id: user_id} = state) do
 
-		json = Poison.decode!(content)
-		Backend.Message.handle(json["type"], json, state)
+		json = Poison.decode!(content, [keys: :atoms])
+		Backend.Message.handle(json.type, json, state)
 
 		{:ok, state}
 	end
