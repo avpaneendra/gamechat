@@ -128,26 +128,33 @@ defmodule Backend.Game.Navigator do
 		# orientation is a quaternion.
 		# rotation is in rotations per sec == 2pi*radians / sec
 
-		t = :os.system_time(:millisecond)
+		try do
+			t = :os.system_time(:millisecond)
 
-		%{x: ox, y: oy, z: oz, t: pt, w: ow} = Kernel.get_in(positions, [user_id, :orientation])
+			%{x: ox, y: oy, z: oz, t: pt, w: ow} = Kernel.get_in(positions, [user_id, :orientation])
 
-		diff = t - pt # time that someone has been rotating at angular_velocity for in ms
+			diff = t - pt # time that someone has been rotating at angular_velocity for in ms
 
-		# first convert velocity to a rotation by multiplying by time diff
-		w = Graphmath.Vec3.create(rx*diff, ry*diff, rz*diff)
-		wbar = Graphmath.Vec3.length(w)
-		{rx, ry, rz} = rrr = Graphmath.Vec3.scale(w, :math.sin(wbar/2) / wbar)
+			# first convert velocity to a rotation by multiplying by time diff
+			w = Graphmath.Vec3.create(rx*diff, ry*diff, rz*diff)
+			wbar = Graphmath.Vec3.length(w)
+				{rx, ry, rz} = rrr = Graphmath.Vec3.scale(w, :math.sin(wbar/2) / wbar)
 
-		# we can derive a quaternion for the rotation 
-		q = Graphmath.Quatern.create(:math.cos(wbar/2), rx, ry, rz)
+			# we can derive a quaternion for the rotation 
+			q = Graphmath.Quatern.create(:math.cos(wbar/2), rx, ry, rz)
 
-		# so now we have represented the rotation as a quaternion and the original state was a quaternion
-		new_orient = Graphmath.Quatern.create(ow, ox, oy, oz)
-		|> Graphmath.Quatern.multiply(q)
+			# so now we have represented the rotation as a quaternion and the original state was a quaternion
+			new_orient = Graphmath.Quatern.create(ow, ox, oy, oz)
+			|> Graphmath.Quatern.multiply(q)
 
-		{ww, x, y, z} = new_orient
-		%{x: x, y: y, z: z, w: ww, t: t}
+			{ww, x, y, z} = new_orient
+			%{x: x, y: y, z: z, w: ww, t: t}
+		rescue
+			e -> 
+				IO.puts "ERROR"
+				IO.inspect e
+				Kernel.get_in(positions, [user_id, :orientation])
+		end
 	end
 
 	def handle_call({:spin, user_id, :stop, orientation}, _from, {room_id, game, positions} = state) do
