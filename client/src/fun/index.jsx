@@ -15,6 +15,19 @@ const shapes = [
 	"cylinder"
 ]
 
+const defaultState = {
+	rotation: {
+		x: 0,
+		y: 0,
+		z: 0
+	},
+	orientation: new THREE.Quaternion(0, 0, 0, 1),
+	position: {
+		x: 0,
+		y: 0
+	}
+}
+
 const getShapeFromKey = (key) => {
 	if(key == "plane") {
 		return new THREE.PlaneBufferGeometry(200, 100);
@@ -78,12 +91,13 @@ export default class Fun extends Component {
 		})
 		.catch(err => navigator.mediaDevices.getUserMedia({ audio: true }))
 
-
 		this.shape_index = 0;
 
 		this.user_id = this.parsedQuery.user || Math.random();
 
 		this.videoElements = new Map(); // userId, { videoElement, videoCanvas, videoTexture }
+
+		this.gameState = {};
 	}
 
 	addStream = (user, stream) => {
@@ -124,23 +138,14 @@ export default class Fun extends Component {
 		this.scene.add(mesh)
 		console.log('added to scene')
 
+		const existingState = this.gameState[user.id] || defaultState;
+		console.log(existingState)
 		this.videoElements.set(user.id, { 
 			videoElement: video, 
 			videoCanvas: canvas, 
 			videoTexture, 
 			mesh,
-			state: { 
-				rotation: {
-					x: 0,
-					y: 0,
-					z: 0
-				},
-				orientation: new THREE.Quaternion(0, 0, 0, 1),
-				position: {
-					x: 0,
-					y: 0
-				}
-			},
+			state: existingState,
 			time: Date.now(),
 			rand: Math.random() * 100
 		});
@@ -306,6 +311,7 @@ export default class Fun extends Component {
 
 		if(data.type == "state") {
 			// data.payload is a map of user ids and positions. update them
+			this.gameState = data.payload;
 			console.log('got state msg')
 			for(let user_id in data.payload) {
 				user_id = parseFloat(user_id)
@@ -321,7 +327,6 @@ export default class Fun extends Component {
 				v.state = d;
 
 				v.mesh.geometry = getShapeFromKey(d.shape)
-
 			}
 		}
 	}
@@ -356,7 +361,7 @@ export default class Fun extends Component {
 				const o = vids.state.orientation;
 				// make sure you slerp to the correct orientation.
 				const target = new THREE.Quaternion(o.x, o.y, o.z, o.w);
-				vids.mesh.setRotationFromQuaternion(vids.mesh.quaternion.slerp(target, 0.01))
+				vids.mesh.setRotationFromQuaternion(vids.mesh.quaternion.slerp(target, 0.1))
 
 				//console.log('setting mesh to target', user, target)
 			}
@@ -368,27 +373,6 @@ export default class Fun extends Component {
 
 			vids.mesh.position.x += xdiff;
 			vids.mesh.position.y += ydiff;
-			/*
-			const xdiff = vids.state.position.x - vids.mesh.position.x;
-			if(Math.abs(xdiff) < 0.5) {
-				vids.mesh.position.x += xdiff;
-			}
-			else {
-				vids.mesh.position.x += xdiff > 0 ? stepSize : -stepSize;
-			}
-
-			const ydiff = vids.state.position.y - vids.mesh.position.y;
-			if(Math.abs(ydiff) < 0.5) {
-				vids.mesh.position.y += ydiff;
-			}
-			else {
-				vids.mesh.position.y += ydiff > 0 ? stepSize : -stepSize;
-			}
-			*/
-			/*
-			vids.mesh.position.x = Math.sin((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200 ;
-			vids.mesh.position.y = Math.cos((Date.now() - vids.time)/(2 * Math.PI * 500) + vids.rand) * 200;
-			*/;
 
 			if(user !== this.user_id) {
 				vids.videoElement.muted = false;

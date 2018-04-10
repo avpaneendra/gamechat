@@ -82,8 +82,6 @@ defmodule Backend.Game.Navigator do
 
 	def handle_cast({:user_exit, user_id}, {room_id, game, positions} = state) do
 
-		IO.puts "user_exit message received"
-		IO.inspect state
 		positions = Map.delete(positions, user_id)
 
 		if (length(Map.keys(positions)) == 0) do
@@ -155,19 +153,9 @@ defmodule Backend.Game.Navigator do
 	def handle_call({:spin, user_id, :stop, orientation}, _from, {room_id, game, positions} = state) do
 
 		rotational_velocity = Kernel.get_in(positions, [user_id, :rotation])
-		calculated_orientation = calculate_orientation(positions, user_id, rotational_velocity)
+		%{t: t} = calculated_orientation = calculate_orientation(positions, user_id, rotational_velocity)
 
-		# IO.puts "stop"
-		# IO.inspect user_id
-		# IO.puts "calculated"
-		# IO.inspect calculated_orientation
-		# IO.puts "actual"
-		# IO.inspect orientation
-
-		IO.puts "hereeeee"
-		IO.inspect calculated_orientation
-		IO.inspect orientation
-		IO.inspect {
+		quatdiff = {
 			calculated_orientation.w - orientation.w,
 			calculated_orientation.x - orientation.x,
 			calculated_orientation.y - orientation.y,
@@ -176,7 +164,7 @@ defmodule Backend.Game.Navigator do
 
 		positions = positions 
 					|> Kernel.put_in([user_id, :rotation], %{x: 0, y: 0, z: 0})
-					|> Kernel.put_in([user_id, :orientation], orientation)
+					|> Kernel.put_in([user_id, :orientation], Map.put(orientation, :t, t))
 
 		{:reply, positions, {room_id, game, positions}}
 

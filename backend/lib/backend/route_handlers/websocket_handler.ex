@@ -21,8 +21,6 @@ defmodule Backend.WebsocketHandler do
 
 	def websocket_init(%{room_id: room_id, user_id: user_id} = state) do
 		# we want to create this room if it doesn't exist.
-		IO.puts "websocket init@"
-
 		{:ok, _} = Registry.register(Backend.Registry, room_id, user_id)
 
 		Backend.Message.init(state)
@@ -48,7 +46,7 @@ defmodule Backend.WebsocketHandler do
 	def websocket_handle({:text, content}, %{room_id: room_id, user_id: user_id} = state) do
 
 		json = Poison.decode!(content, [keys: :atoms])
-		Backend.Message.handle(json.type, json, state)
+		res = Backend.Message.handle(json.type, json, state)
 
 		{:ok, state}
 	end
